@@ -1,5 +1,39 @@
 ---
-// This component renders the main player statistics table
+import type { PlayerStats } from '../types/raid.ts';
+
+interface Props {
+  allPlayerStats: PlayerStats[];
+}
+
+const { allPlayerStats } = Astro.props;
+
+// Helper functions
+function formatNumber(num: number): string {
+  if (num === 0) return '-';
+  return new Intl.NumberFormat('de-DE').format(Math.round(num));
+}
+
+function getParticipationClass(participation: number): string {
+  if (participation >= 80) return 'participation-good';
+  if (participation >= 50) return 'participation-warning';
+  return 'participation-poor';
+}
+
+function getEfficiencyClass(efficiency: number): string {
+  if (efficiency >= 100) return 'text-green-400';
+  if (efficiency >= 80) return 'text-yellow-400';
+  return 'text-red-400';
+}
+
+function getTrendClass(trend: string): string {
+  if (trend === 'Rising') return 'trend-positive';
+  if (trend === 'Falling') return 'trend-negative';
+  if (trend === 'Stable') return 'trend-stable';
+  return '';
+}
+
+// Sort players by participation by default
+const sortedPlayers = [...allPlayerStats].sort((a, b) => b.participation - a.participation);
 ---
 
 <div class="glass-card p-3 sm:p-5 mt-6 sm:mt-8">
@@ -34,7 +68,118 @@
         </tr>
       </thead>
       <tbody id="playersTableBody">
+        {sortedPlayers.map((player) => (
+          <tr>
+            <td class="table-cell-sticky px-2 sm:px-3 py-2">{player.name}</td>
+            <td class="px-2 sm:px-3 py-2">{player.allycode}</td>
+            <td class={`px-2 sm:px-3 py-2 ${getParticipationClass(player.participation)}`}>
+              {player.participation.toFixed(1)}%
+            </td>
+            <td class="px-2 sm:px-3 py-2">
+              {player.raidsParticipated}/{player.totalRaids}
+            </td>
+            <td class="px-2 sm:px-3 py-2">{formatNumber(player.avgEstimate)}</td>
+            <td class="px-2 sm:px-3 py-2">{formatNumber(player.bestScore)}</td>
+            <td class="px-2 sm:px-3 py-2">{formatNumber(player.lastScore)}</td>
+            <td class={`px-2 sm:px-3 py-2 ${getEfficiencyClass(player.efficiency)}`}>
+              {player.efficiency.toFixed(1)}%
+            </td>
+            <td class={`px-2 sm:px-3 py-2 ${getTrendClass(player.trend)}`}>
+              {player.trend}
+            </td>
+          </tr>
+        ))}
       </tbody>
     </table>
   </div>
 </div>
+
+<script define:vars={{ allPlayerStats }}>
+  let filteredData = [...allPlayerStats];
+
+  function formatNumber(num) {
+    if (num === 0) return '-';
+    return new Intl.NumberFormat('de-DE').format(Math.round(num));
+  }
+
+  function applyFilters() {
+    const sortBy = document.getElementById('sortBy').value;
+
+    // Use all player stats directly (no filtering)
+    filteredData = [...allPlayerStats];
+
+    sortData(sortBy);
+    updatePlayerTable();
+  }
+
+  function sortData(criteria) {
+    filteredData.sort((a, b) => {
+      switch (criteria) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'participation':
+          return b.participation - a.participation;
+        case 'totalScore':
+          return b.totalScore - a.totalScore;
+        case 'avgEstimate':
+          return b.avgEstimate - a.avgEstimate;
+        case 'bestScore':
+          return b.bestScore - a.bestScore;
+        case 'lastScore':
+          return b.lastScore - a.lastScore;
+        case 'efficiency':
+          return b.efficiency - a.efficiency;
+        case 'lastActivity':
+          return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
+        default:
+          return b.participation - a.participation;
+      }
+    });
+  }
+
+  function updatePlayerTable() {
+    const tbody = document.getElementById('playersTableBody');
+    tbody.innerHTML = '';
+
+    filteredData.forEach(player => {
+      const row = document.createElement('tr');
+      
+      let participationClass = '';
+      if (player.participation >= 80) participationClass = 'participation-good';
+      else if (player.participation >= 50) participationClass = 'participation-warning';
+      else participationClass = 'participation-poor';
+
+      let efficiencyClass = '';
+      if (player.efficiency >= 100) efficiencyClass = 'text-green-400';
+      else if (player.efficiency >= 80) efficiencyClass = 'text-yellow-400';
+      else efficiencyClass = 'text-red-400';
+
+      let trendClass = '';
+      if (player.trend === 'Rising') trendClass = 'trend-positive';
+      else if (player.trend === 'Falling') trendClass = 'trend-negative';
+      else if (player.trend === 'Stable') trendClass = 'trend-stable';
+
+      row.innerHTML = `
+        <td class="table-cell-sticky px-2 sm:px-3 py-2">${player.name}</td>
+        <td class="px-2 sm:px-3 py-2">${player.allycode}</td>
+        <td class="px-2 sm:px-3 py-2 ${participationClass}">${player.participation.toFixed(1)}%</td>
+        <td class="px-2 sm:px-3 py-2">${player.raidsParticipated}/${player.totalRaids}</td>
+        <td class="px-2 sm:px-3 py-2">${formatNumber(player.avgEstimate)}</td>
+        <td class="px-2 sm:px-3 py-2">${formatNumber(player.bestScore)}</td>
+        <td class="px-2 sm:px-3 py-2">${formatNumber(player.lastScore)}</td>
+        <td class="px-2 sm:px-3 py-2 ${efficiencyClass}">${player.efficiency.toFixed(1)}%</td>
+        <td class="px-2 sm:px-3 py-2 ${trendClass}">${player.trend}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  function sortTable(column) {
+    document.getElementById('sortBy').value = column;
+    applyFilters();
+  }
+
+  // Make functions globally available
+  window.applyFilters = applyFilters;
+  window.sortTable = sortTable;
+</script>

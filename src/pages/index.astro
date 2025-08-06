@@ -184,7 +184,7 @@ const baseUrl = PROJECT_CONFIG.baseUrl;
         />
       </div>
 
-      <PlayerTable />
+      <PlayerTable allPlayerStats={playerStatsArray} />
       <RaidTable allPlayerStats={playerStatsArray} raidData={allRaidData} />
     </>
   ) : (
@@ -217,10 +217,8 @@ const baseUrl = PROJECT_CONFIG.baseUrl;
   )}
 
   {totalRaids > 0 && (
-    <script define:vars={{ allRaidData, playerStatsArray, baseUrl }}>
+    <script define:vars={{ allRaidData, baseUrl }}>
       let raidData = allRaidData;
-      let allPlayerStats = playerStatsArray;
-    let filteredData = [...allPlayerStats];
     let isInitialized = false;
 
     // Helper function to get CSS custom property values
@@ -261,7 +259,6 @@ const baseUrl = PROJECT_CONFIG.baseUrl;
         // Wait for Chart.js before updating UI
         waitForChartJS(() => {
           createCharts();
-          applyFilters();
           isInitialized = true;
           console.log('Initialization complete');
         });
@@ -270,88 +267,6 @@ const baseUrl = PROJECT_CONFIG.baseUrl;
         console.error('Error in initializeApp:', error);
         showError(error.message);
       }
-    }
-
-    function applyFilters() {
-      const sortBy = document.getElementById('sortBy').value;
-
-      // Use all player stats directly (no filtering)
-      filteredData = [...allPlayerStats];
-
-      sortData(sortBy);
-      updateTable();
-    }
-
-    function sortData(criteria) {
-      filteredData.sort((a, b) => {
-        switch (criteria) {
-          case 'name':
-            return a.name.localeCompare(b.name);
-          case 'participation':
-            return b.participation - a.participation;
-          case 'totalScore':
-            return b.totalScore - a.totalScore;
-          case 'avgEstimate':
-            return b.avgEstimate - a.avgEstimate;
-          case 'bestScore':
-            return b.bestScore - a.bestScore;
-          case 'lastScore':
-            return b.lastScore - a.lastScore;
-          case 'efficiency':
-            return b.efficiency - a.efficiency;
-          case 'lastActivity':
-            return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
-          default:
-            return b.participation - a.participation;
-        }
-      });
-    }
-
-    function updateTable() {
-      const tbody = document.getElementById('playersTableBody');
-      tbody.innerHTML = '';
-
-      filteredData.forEach(player => {
-        const row = document.createElement('tr');
-        
-        let participationClass = '';
-        if (player.participation >= 80) participationClass = 'participation-good';
-        else if (player.participation >= 50) participationClass = 'participation-warning';
-        else participationClass = 'participation-poor';
-
-        let efficiencyClass = '';
-        if (player.efficiency >= 100) efficiencyClass = 'text-green-400';
-        else if (player.efficiency >= 80) efficiencyClass = 'text-yellow-400';
-        else efficiencyClass = 'text-red-400';
-
-        let trendClass = '';
-        if (player.trend === 'Rising') trendClass = 'trend-positive';
-        else if (player.trend === 'Falling') trendClass = 'trend-negative';
-        else if (player.trend === 'Stable') trendClass = 'trend-stable';
-
-        row.innerHTML = `
-          <td class="table-cell-sticky">${player.name}</td>
-          <td>${player.allycode}</td>
-          <td class="${participationClass}">${player.participation.toFixed(1)}%</td>
-          <td>${player.raidsParticipated}/${player.totalRaids}</td>
-          <td>${formatNumber(player.avgEstimate)}</td>
-          <td>${formatNumber(player.bestScore)}</td>
-          <td>${formatNumber(player.lastScore)}</td>
-          <td class="${efficiencyClass}">${player.efficiency.toFixed(1)}%</td>
-          <td class="${trendClass}">${player.trend}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-function formatNumber(num) {
-      if (num === 0) return '-';
-      return new Intl.NumberFormat(navigator.language).format(Math.round(num));
-    }
-
-    function sortTable(column) {
-      document.getElementById('sortBy').value = column;
-      applyFilters();
     }
 
     function showError(message) {
@@ -386,12 +301,15 @@ function formatNumber(num) {
         raidTotalChart.destroy();
       }
       
+      // Only use last 5 raids for charts
       const sortedRaids = raidData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      const labels = sortedRaids.map(raid => raid.date);
-      const totalScores = sortedRaids.map(raid => {
+      const last5Raids = sortedRaids.slice(-5);
+      
+      const labels = last5Raids.map(raid => raid.date);
+      const totalScores = last5Raids.map(raid => {
         return raid.data.reduce((sum, player) => sum + (player.lastActualScore || 0), 0);
       });
-      const participantCounts = sortedRaids.map(raid => {
+      const participantCounts = last5Raids.map(raid => {
         return raid.data.filter(player => player.participated).length;
       });
 
@@ -480,7 +398,7 @@ function formatNumber(num) {
       rankingChart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: raidData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(raid => raid.date),
+          labels: [],
           datasets: []
         },
         options: {
@@ -537,10 +455,16 @@ function formatNumber(num) {
     }
 
     function updateRankingChart() {
+      // Only use last 5 raids for charts
       const sortedRaids = raidData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const last5Raids = sortedRaids.slice(-5);
+      
+      // Update chart labels with last 5 raids
+      rankingChart.data.labels = last5Raids.map(raid => raid.date);
+      
       const playerScores = new Map();
       
-      sortedRaids.forEach(raid => {
+      last5Raids.forEach(raid => {
         raid.data.forEach(player => {
           // Include all players in raid data (participated or not)
           if (!playerScores.has(player.allycode)) {
@@ -566,7 +490,7 @@ function formatNumber(num) {
       rankingChart.data.datasets = [];
       let colorIndex = 0;
       
-      const minAppearances = Math.ceil(sortedRaids.length / 2);
+      const minAppearances = Math.ceil(last5Raids.length / 2);
       
       Array.from(playerScores.entries())
         .filter(([allycode, data]) => data.scores.length >= minAppearances)
@@ -576,7 +500,7 @@ function formatNumber(num) {
           return avgB - avgA;
         })
         .forEach(([allycode, data]) => {
-          const fullScores = sortedRaids.map(raid => {
+          const fullScores = last5Raids.map(raid => {
             const scoreEntry = data.scores.find(r => r.date === raid.date);
             return scoreEntry ? scoreEntry.score : null;
           });
@@ -599,8 +523,6 @@ function formatNumber(num) {
       rankingChart.update();
     }
 
-    window.applyFilters = applyFilters;
-    window.sortTable = sortTable;
     window.updateRankingChart = updateRankingChart;
     </script>
   )}

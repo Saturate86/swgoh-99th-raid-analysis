@@ -116,7 +116,7 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => b.avgEsti
     <table id="raidTable" class="w-full border-collapse text-xs sm:text-sm">
       <thead>
         <tr>
-          <th class="sticky left-0 z-20 table-header px-2 sm:px-3 py-2 sm:py-3 text-left border-r-2 border-secondary">Player Name</th>
+          <th class="table-cell-sticky left-0 z-20 table-header px-2 sm:px-3 py-2 sm:py-3 text-left border-r-2 border-secondary">Player Name</th>
           <th class="table-header px-2 sm:px-3 py-2 sm:py-3 text-left">Avg Estimate</th>
           {last5RaidDates.map((raidDate: string) => {
             const raidAverage = raidAverages[raidDate];
