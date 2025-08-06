@@ -185,7 +185,7 @@ const baseUrl = PROJECT_CONFIG.baseUrl;
       </div>
 
       <PlayerTable />
-      <RaidTable />
+      <RaidTable allPlayerStats={playerStatsArray} raidData={allRaidData} />
     </>
   ) : (
     <div class="text-center py-12">
@@ -330,7 +330,7 @@ const baseUrl = PROJECT_CONFIG.baseUrl;
         else if (player.trend === 'Stable') trendClass = 'trend-stable';
 
         row.innerHTML = `
-          <td>${player.name}</td>
+          <td class="table-cell-sticky">${player.name}</td>
           <td>${player.allycode}</td>
           <td class="${participationClass}">${player.participation.toFixed(1)}%</td>
           <td>${player.raidsParticipated}/${player.totalRaids}</td>
@@ -347,16 +347,6 @@ const baseUrl = PROJECT_CONFIG.baseUrl;
 function formatNumber(num) {
       if (num === 0) return '-';
       return new Intl.NumberFormat(navigator.language).format(Math.round(num));
-    }
-
-    function getPercentageClass(percentage) {
-      if (percentage < 85) return 'percentage-very-low';
-      if (percentage < 95) return 'percentage-low';
-      if (percentage < 105) return 'percentage-below-avg';
-      if (percentage < 110) return 'percentage-avg';
-      if (percentage < 120) return 'percentage-good';
-      if (percentage < 130) return 'percentage-excellent';
-      return 'percentage-outstanding';
     }
 
     function sortTable(column) {
@@ -386,7 +376,6 @@ function formatNumber(num) {
       
       createRaidTotalChart();
       createRankingChart();
-      updateRaidTable();
     }
 
     function createRaidTotalChart() {
@@ -610,187 +599,9 @@ function formatNumber(num) {
       rankingChart.update();
     }
 
-    function updateRaidTable() {
-      const sortBy = document.getElementById('raidTableSort').value;
-      const raidTableBody = document.getElementById('raidTableBody');
-      
-      // Use only the last 5 raids for the detailed table
-      const last5RaidData = raidData.slice(-5);
-      const last5RaidDates = last5RaidData.map(raid => raid.date).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-      
-      // Convert player stats to format needed for raid table, using last5Raids data
-      const allPlayersData = allPlayerStats.map(playerStat => {
-        const playerData = {
-          name: playerStat.name,
-          participation: playerStat.participation,
-          avgScore: playerStat.avgScore,
-          avgEstimate: playerStat.avgEstimate,
-          maxEstimated: playerStat.maxEstimated,
-          bestScore: playerStat.bestScore,
-          efficiency: playerStat.efficiency,
-          raids: {}
-        };
-        
-        // Map last 5 raids data - only add entries where player was in guild
-        const raidsMap = {};
-        playerStat.last5Raids.forEach(raidEntry => {
-          raidsMap[raidEntry.date] = raidEntry.participated ? raidEntry.score : null;
-        });
-        
-        // For dates where player has no entry, set to undefined (not in guild)
-        last5RaidDates.forEach(raidDate => {
-          if (!(raidDate in raidsMap)) {
-            raidsMap[raidDate] = undefined;
-          }
-        });
-        
-        playerData.raids = raidsMap;
-        
-        return playerData;
-      });
-      
-      // Sort all players data directly (no filtering)
-      allPlayersData.sort((a, b) => {
-        switch (sortBy) {
-          case 'name':
-            return a.name.localeCompare(b.name);
-          case 'avgEstimate':
-            return b.avgEstimate - a.avgEstimate;
-          default:
-            return 0;
-        }
-      });
-      
-      let html = '';
-      
-      // Calculate averages for last 5 raids only (only from players who have data for that raid)
-      const raidAverages = {};
-      for (let raidDate of last5RaidDates) {
-        let totalScore = 0;
-        let playerCount = 0;
-        
-        for (let player of allPlayersData) {
-          const score = player.raids[raidDate];
-          if (score !== undefined && score !== null) {
-            totalScore += score;
-            playerCount++;
-          }
-        }
-        
-        raidAverages[raidDate] = playerCount > 0 ? totalScore / playerCount : 0;
-      }
-      
-      for (let player of allPlayersData) {
-        html += `<tr>`;
-        html += `<td class="table-cell-sticky">${player.name}</td>`;
-        html += `<td class="table-cell-center">${new Intl.NumberFormat(navigator.language).format(Math.round(player.avgEstimate))}</td>`;
-        
-        // Add individual raid scores for last 5 raids
-        for (let raidDate of last5RaidDates) {
-          const score = player.raids[raidDate];
-          const avgScore = raidAverages[raidDate];
-          
-          if (score === undefined) {
-            // Player was not in guild at this time - show gray
-            html += `<td class="table-cell-center text-gray-500">-</td>`;
-          } else if (score === null) {
-            // Player was in guild but didn't participate - show red
-            html += `<td class="table-cell-center percentage-very-low">-</td>`;
-          } else {
-            // Player participated - show with color coding
-            const percentageVsAvg = avgScore > 0 ? (score / avgScore) * 100 : 100;
-            const percentageClass = getPercentageClass(percentageVsAvg);
-            
-            const playerStat = allPlayerStats.find(p => p.name === player.name);
-            const raidEntry = playerStat?.last5Raids.find(r => r.date === raidDate);
-            const estimatedScore = raidEntry?.estimatedScore || 0;
-            const raidEfficiency = estimatedScore > 0 ? ((score / estimatedScore) * 100) : 0;
-            
-            html += `<td class="table-cell-center ${percentageClass}">${new Intl.NumberFormat(navigator.language).format(score)} (${raidEfficiency.toFixed(0)}%)</td>`;
-          }
-        }
-        
-        // Add Max/Est as the very last column (Best Score as percentage of Average Estimate)
-        const maxEstPercentage = player.avgEstimate > 0 ? ((player.bestScore / player.avgEstimate) * 100) : 0;
-        const percentageClass = getPercentageClass(maxEstPercentage);
-        html += `<td class="table-cell-center ${percentageClass}">${maxEstPercentage.toFixed(0)}%</td>`;
-        
-        html += `</tr>`;
-      }
-      
-      // Calculate totals for footer
-      const totalAvgEstimate = allPlayersData.length > 0 ? 
-        (allPlayersData.reduce((sum, p) => sum + p.avgEstimate, 0) / allPlayersData.length) : 0;
-      
-      // Calculate total scores for each raid (only players who have data for that raid)
-      const raidTotals = {};
-      for (let raidDate of last5RaidDates) {
-        let total = 0;
-        for (let player of allPlayersData) {
-          const score = player.raids[raidDate];
-          if (score !== undefined && score !== null) {
-            total += score;
-          }
-        }
-        raidTotals[raidDate] = total;
-      }
-      
-      // Calculate average Max/Est percentage
-      const avgMaxEstPercentage = allPlayersData.length > 0 ? 
-        (allPlayersData.reduce((sum, p) => {
-          const percentage = p.avgEstimate > 0 ? ((p.bestScore / p.avgEstimate) * 100) : 0;
-          return sum + percentage;
-        }, 0) / allPlayersData.length) : 0;
-      
-      // Add footer row with totals
-      html += `<tr class="table-footer">`;
-      html += `<td class="table-cell-sticky">📊 TOTAL (${allPlayersData.length} players)</td>`;
-      html += `<td>${new Intl.NumberFormat(navigator.language).format(Math.round(totalAvgEstimate))}</td>`;
-      
-      // Add total scores for each raid
-      for (let raidDate of last5RaidDates) {
-        html += `<td>${new Intl.NumberFormat(navigator.language).format(raidTotals[raidDate])}</td>`;
-      }
-      
-      // Add average Max/Est percentage
-      const avgPercentageClass = getPercentageClass(avgMaxEstPercentage);
-      html += `<td class="${avgPercentageClass}">${avgMaxEstPercentage.toFixed(0)}%</td>`;
-      html += `</tr>`;
-      
-      raidTableBody.innerHTML = html;
-      
-      // Update table headers to show only last 5 raids
-      const tableHeader = document.querySelector('#raidTable thead tr');
-      const existingRaidHeaders = tableHeader.querySelectorAll('th[data-raid-date]');
-      const existingMaxEstHeader = tableHeader.querySelector('th[data-max-est]');
-      
-      // Remove existing raid date headers and max/est header
-      existingRaidHeaders.forEach(th => th.remove());
-      if (existingMaxEstHeader) {
-        existingMaxEstHeader.remove();
-      }
-      
-      // Add new headers for last 5 raids
-      for (let raidDate of last5RaidDates) {
-        const th = document.createElement('th');
-        th.setAttribute('data-raid-date', raidDate);
-        th.className = 'table-header px-2 sm:px-3 py-2 sm:py-3 text-center min-w-[100px]';
-        th.innerHTML = `${raidDate}<br><small class="text-gray-400">(Ø ${new Intl.NumberFormat(navigator.language).format(Math.round(raidAverages[raidDate]))})</small>`;
-        tableHeader.appendChild(th);
-      }
-      
-      // Add Max/Est header as the very last column
-      const maxEstTh = document.createElement('th');
-      maxEstTh.setAttribute('data-max-est', 'true');
-      maxEstTh.className = 'table-header px-2 sm:px-3 py-2 sm:py-3 text-center min-w-[120px]';
-      maxEstTh.innerHTML = 'Max/Est';
-      tableHeader.appendChild(maxEstTh);
-    }
-
     window.applyFilters = applyFilters;
     window.sortTable = sortTable;
     window.updateRankingChart = updateRankingChart;
-    window.updateRaidTable = updateRaidTable;
     </script>
   )}
 </Layout>
