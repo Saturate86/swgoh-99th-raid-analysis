@@ -35,6 +35,7 @@ const { raidData } = Astro.props;
       <button onclick="selectAllPlayers()" class="btn-secondary text-xs px-3 py-2">All</button>
       <button onclick="clearAllPlayers()" class="btn-secondary text-xs px-3 py-2">None</button>
       <button onclick="selectTopPerformers()" class="btn-secondary text-xs px-3 py-2">Top 5</button>
+      <button onclick="selectWorstPerformers()" class="btn-secondary text-xs px-3 py-2">Worst 5</button>
     </div>
   </div>
 
@@ -201,10 +202,43 @@ const { raidData } = Astro.props;
     // Clear all first
     clearAllPlayers();
     
-    // Select top 5
-    const checkboxes = document.querySelectorAll('.player-checkbox');
-    for (let i = 0; i < Math.min(5, checkboxes.length); i++) {
-      checkboxes[i].checked = true;
+    // Get players sorted by average performance (descending)
+    const playersByPerformance = Array.from(allPlayerData.entries())
+      .map(([allycode, data]) => ({
+        allycode,
+        avgScore: data.scores.reduce((sum, r) => sum + r.score, 0) / data.scores.length
+      }))
+      .sort((a, b) => b.avgScore - a.avgScore);
+    
+    // Select top 5 performers
+    for (let i = 0; i < Math.min(5, playersByPerformance.length); i++) {
+      const checkbox = document.getElementById(`player-${playersByPerformance[i].allycode}`);
+      if (checkbox) {
+        checkbox.checked = true;
+      }
+    }
+    updateSelectedText();
+    updateRankingChart();
+  }
+
+  function selectWorstPerformers() {
+    // Clear all first
+    clearAllPlayers();
+    
+    // Get players sorted by average performance (ascending)
+    const playersByPerformance = Array.from(allPlayerData.entries())
+      .map(([allycode, data]) => ({
+        allycode,
+        avgScore: data.scores.reduce((sum, r) => sum + r.score, 0) / data.scores.length
+      }))
+      .sort((a, b) => a.avgScore - b.avgScore);
+    
+    // Select worst 5 performers
+    for (let i = 0; i < Math.min(5, playersByPerformance.length); i++) {
+      const checkbox = document.getElementById(`player-${playersByPerformance[i].allycode}`);
+      if (checkbox) {
+        checkbox.checked = true;
+      }
     }
     updateSelectedText();
     updateRankingChart();
@@ -356,6 +390,7 @@ const { raidData } = Astro.props;
   window.selectAllPlayers = selectAllPlayers;
   window.clearAllPlayers = clearAllPlayers;
   window.selectTopPerformers = selectTopPerformers;
+  window.selectWorstPerformers = selectWorstPerformers;
   window.toggleDropdown = toggleDropdown;
   window.togglePlayerSelection = togglePlayerSelection;
 
