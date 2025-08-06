@@ -1,0 +1,151 @@
+---
+import ChartContainer from './ChartContainer.astro';
+import type { RaidData } from '../types/raid.ts';
+
+interface Props {
+  raidData: RaidData[];
+}
+
+const { raidData } = Astro.props;
+---
+
+<ChartContainer 
+  title="📊 Total Raid Points Over Time" 
+  canvasId="raidTotalChart"
+/>
+
+<script define:vars={{ raidData }}>
+  let raidTotalChart = null;
+
+  // Helper function to get CSS custom property values
+  function getCSSVariable(variable) {
+    return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+  }
+
+  // Get theme colors from CSS variables
+  const themeColors = {
+    primary: getCSSVariable('--color-primary'),
+    secondary: getCSSVariable('--color-secondary'),
+    primaryRgb: getCSSVariable('--color-primary-rgb'),
+    secondaryRgb: getCSSVariable('--color-secondary-rgb'),
+    primaryAlpha: (alpha) => `rgba(${getCSSVariable('--color-primary-rgb')}, ${alpha})`,
+    secondaryAlpha: (alpha) => `rgba(${getCSSVariable('--color-secondary-rgb')}, ${alpha})`
+  };
+
+  function waitForChartJS(callback) {
+    if (typeof Chart !== 'undefined') {
+      callback();
+    } else {
+      setTimeout(() => waitForChartJS(callback), 100);
+    }
+  }
+
+  function createRaidTotalChart() {
+    const ctx = document.getElementById('raidTotalChart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (raidTotalChart) {
+      raidTotalChart.destroy();
+    }
+    
+    // Only use last 5 raids for charts
+    const sortedRaids = raidData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const last5Raids = sortedRaids.slice(-5);
+    
+    const labels = last5Raids.map(raid => raid.date);
+    const totalScores = last5Raids.map(raid => {
+      return raid.data.reduce((sum, player) => sum + (player.lastActualScore || 0), 0);
+    });
+    const participantCounts = last5Raids.map(raid => {
+      return raid.data.filter(player => player.participated).length;
+    });
+
+    raidTotalChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Total Points',
+          data: totalScores,
+          borderColor: themeColors.secondary,
+          backgroundColor: themeColors.secondaryAlpha(0.1),
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          yAxisID: 'y'
+        }, {
+          label: 'Number of Participants',
+          data: participantCounts,
+          borderColor: themeColors.primary,
+          backgroundColor: themeColors.primaryAlpha(0.1),
+          borderWidth: 2,
+          fill: false,
+          tension: 0.4,
+          yAxisID: 'y1'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: false
+          },
+          legend: {
+            labels: { color: '#e0e0e0' }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: '#e0e0e0' },
+            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+          },
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            ticks: { 
+              color: themeColors.secondary,
+              callback: function(value) {
+                return new Intl.NumberFormat('de-DE').format(value);
+              }
+            },
+            grid: { color: themeColors.secondaryAlpha(0.1) },
+            title: {
+              display: true,
+              text: 'Total Points',
+              color: themeColors.secondary
+            }
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            ticks: { color: themeColors.primary },
+            grid: { drawOnChartArea: false },
+            title: {
+              display: true,
+              text: 'Number of Participants',
+              color: themeColors.primary
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Initialize chart when Chart.js is loaded
+  function initRaidTotalChart() {
+    waitForChartJS(createRaidTotalChart);
+  }
+
+  // Auto-initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRaidTotalChart);
+  } else {
+    initRaidTotalChart();
+  }
+
+  // Make chart available globally for potential updates
+  window.raidTotalChart = () => raidTotalChart;
+</script>
