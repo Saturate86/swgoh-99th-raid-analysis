@@ -14,15 +14,15 @@ function formatNumber(num: number): string {
 }
 
 function getParticipationClass(participation: number): string {
-  if (participation >= 80) return 'participation-good';
-  if (participation >= 50) return 'participation-warning';
+  if (participation >= 80) return 'participation-excellent';
+  if (participation >= 50) return 'participation-good';
   return 'participation-poor';
 }
 
 function getEfficiencyClass(efficiency: number): string {
-  if (efficiency >= 100) return 'text-green-400';
-  if (efficiency >= 80) return 'text-yellow-400';
-  return 'text-red-400';
+  if (efficiency >= 100) return 'efficiency-excellent';
+  if (efficiency >= 80) return 'efficiency-good';
+  return 'efficiency-poor';
 }
 
 function getTrendClass(trend: string): string {
@@ -56,35 +56,35 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => b.participation - a.par
     <table id="playersTable" class="w-full border-collapse text-xs sm:text-sm">
       <thead>
         <tr>
-          <th onclick="sortTable('name')" class="table-header table-cell-sticky px-2 sm:px-3 py-2 sm:py-3 text-left">Player Name</th>
-          <th onclick="sortTable('allycode')" class="table-header px-2 sm:px-3 py-2 sm:py-3 text-left">Ally Code</th>
-          <th onclick="sortTable('participation')" class="table-header px-2 sm:px-3 py-2 sm:py-3 text-left">Participation %</th>
-          <th onclick="sortTable('raidsParticipated')" class="table-header px-2 sm:px-3 py-2 sm:py-3 text-left">Raids (Last 5)</th>
-          <th onclick="sortTable('avgEstimate')" class="table-header px-2 sm:px-3 py-2 sm:py-3 text-left">Avg Estimate</th>
-          <th onclick="sortTable('bestScore')" class="table-header px-2 sm:px-3 py-2 sm:py-3 text-left">Best Score</th>
-          <th onclick="sortTable('lastScore')" class="table-header px-2 sm:px-3 py-2 sm:py-3 text-left">Last Score</th>
-          <th onclick="sortTable('efficiency')" class="table-header px-2 sm:px-3 py-2 sm:py-3 text-left">Efficiency %</th>
-          <th onclick="sortTable('trend')" class="table-header px-2 sm:px-3 py-2 sm:py-3 text-left">Trend</th>
+          <th onclick="sortTable('name')" class="raid-table-header raid-table-header-sticky">Player Name</th>
+          <th onclick="sortTable('allycode')" class="raid-table-header">Ally Code</th>
+          <th onclick="sortTable('participation')" class="raid-table-header">Participation %</th>
+          <th onclick="sortTable('raidsParticipated')" class="raid-table-header">Raids (Last 5)</th>
+          <th onclick="sortTable('avgEstimate')" class="raid-table-header">Avg Estimate</th>
+          <th onclick="sortTable('bestScore')" class="raid-table-header">Best Score</th>
+          <th onclick="sortTable('lastScore')" class="raid-table-header">Last Score</th>
+          <th onclick="sortTable('efficiency')" class="raid-table-header">Efficiency %</th>
+          <th onclick="sortTable('trend')" class="raid-table-header">Trend</th>
         </tr>
       </thead>
       <tbody id="playersTableBody">
         {sortedPlayers.map((player) => (
-          <tr>
-            <td class="table-cell-sticky px-2 sm:px-3 py-2">{player.name}</td>
-            <td class="px-2 sm:px-3 py-2">{player.allycode}</td>
-            <td class={`px-2 sm:px-3 py-2 ${getParticipationClass(player.participation)}`}>
+          <tr class="raid-table-row">
+            <td class="raid-table-cell raid-table-cell-sticky">{player.name}</td>
+            <td class="raid-table-cell">{player.allycode}</td>
+            <td class={`raid-table-cell ${getParticipationClass(player.participation)}`}>
               {player.participation.toFixed(1)}%
             </td>
-            <td class="px-2 sm:px-3 py-2">
+            <td class="raid-table-cell">
               {player.raidsParticipated}/{player.totalRaids}
             </td>
-            <td class="px-2 sm:px-3 py-2">{formatNumber(player.avgEstimate)}</td>
-            <td class="px-2 sm:px-3 py-2">{formatNumber(player.bestScore)}</td>
-            <td class="px-2 sm:px-3 py-2">{formatNumber(player.lastScore)}</td>
-            <td class={`px-2 sm:px-3 py-2 ${getEfficiencyClass(player.efficiency)}`}>
+            <td class="raid-table-cell">{formatNumber(player.avgEstimate)}</td>
+            <td class="raid-table-cell">{formatNumber(player.bestScore)}</td>
+            <td class="raid-table-cell">{formatNumber(player.lastScore)}</td>
+            <td class={`raid-table-cell ${getEfficiencyClass(player.efficiency)}`}>
               {player.efficiency.toFixed(1)}%
             </td>
-            <td class={`px-2 sm:px-3 py-2 ${getTrendClass(player.trend)}`}>
+            <td class={`raid-table-cell ${getTrendClass(player.trend)}`}>
               {player.trend}
             </td>
           </tr>
@@ -143,16 +143,17 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => b.participation - a.par
 
     filteredData.forEach(player => {
       const row = document.createElement('tr');
+      row.className = 'raid-table-row';
       
       let participationClass = '';
-      if (player.participation >= 80) participationClass = 'participation-good';
-      else if (player.participation >= 50) participationClass = 'participation-warning';
+      if (player.participation >= 80) participationClass = 'participation-excellent';
+      else if (player.participation >= 50) participationClass = 'participation-good';
       else participationClass = 'participation-poor';
 
       let efficiencyClass = '';
-      if (player.efficiency >= 100) efficiencyClass = 'text-green-400';
-      else if (player.efficiency >= 80) efficiencyClass = 'text-yellow-400';
-      else efficiencyClass = 'text-red-400';
+      if (player.efficiency >= 100) efficiencyClass = 'efficiency-excellent';
+      else if (player.efficiency >= 80) efficiencyClass = 'efficiency-good';
+      else efficiencyClass = 'efficiency-poor';
 
       let trendClass = '';
       if (player.trend === 'Rising') trendClass = 'trend-positive';
@@ -160,15 +161,15 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => b.participation - a.par
       else if (player.trend === 'Stable') trendClass = 'trend-stable';
 
       row.innerHTML = `
-        <td class="table-cell-sticky px-2 sm:px-3 py-2">${player.name}</td>
-        <td class="px-2 sm:px-3 py-2">${player.allycode}</td>
-        <td class="px-2 sm:px-3 py-2 ${participationClass}">${player.participation.toFixed(1)}%</td>
-        <td class="px-2 sm:px-3 py-2">${player.raidsParticipated}/${player.totalRaids}</td>
-        <td class="px-2 sm:px-3 py-2">${formatNumber(player.avgEstimate)}</td>
-        <td class="px-2 sm:px-3 py-2">${formatNumber(player.bestScore)}</td>
-        <td class="px-2 sm:px-3 py-2">${formatNumber(player.lastScore)}</td>
-        <td class="px-2 sm:px-3 py-2 ${efficiencyClass}">${player.efficiency.toFixed(1)}%</td>
-        <td class="px-2 sm:px-3 py-2 ${trendClass}">${player.trend}</td>
+        <td class="raid-table-cell raid-table-cell-sticky">${player.name}</td>
+        <td class="raid-table-cell">${player.allycode}</td>
+        <td class="raid-table-cell ${participationClass}">${player.participation.toFixed(1)}%</td>
+        <td class="raid-table-cell">${player.raidsParticipated}/${player.totalRaids}</td>
+        <td class="raid-table-cell">${formatNumber(player.avgEstimate)}</td>
+        <td class="raid-table-cell">${formatNumber(player.bestScore)}</td>
+        <td class="raid-table-cell">${formatNumber(player.lastScore)}</td>
+        <td class="raid-table-cell ${efficiencyClass}">${player.efficiency.toFixed(1)}%</td>
+        <td class="raid-table-cell ${trendClass}">${player.trend}</td>
       `;
       tbody.appendChild(row);
     });

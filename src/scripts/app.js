@@ -16,9 +16,6 @@ export function initializeApp(allRaidData) {
 
     processPlayerStats();
     updateUI();
-    
-    document.getElementById('loading').classList.add('hidden');
-    document.getElementById('content').classList.remove('hidden');
 
   } catch (error) {
     showError(error.message);
@@ -210,7 +207,6 @@ export function exportData() {
 }
 
 function showError(message) {
-  document.getElementById('loading').classList.add('hidden');
   const errorDiv = document.getElementById('error');
   errorDiv.textContent = message;
   errorDiv.classList.remove('hidden');

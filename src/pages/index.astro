@@ -30,8 +30,9 @@ function calculatePlayerStats(raidData: RaidData[]): PlayerStats[] {
   // Get the last 5 raids for more recent analysis
   const last5Raids = raidData.slice(-5);
   
+  // Only collect players from last 5 raids (not all raids)
   const allPlayers = new Set();
-  raidData.forEach(raid => {
+  last5Raids.forEach(raid => {
     raid.data.forEach(player => {
       allPlayers.add(player.allycode);
     });
@@ -117,24 +118,27 @@ function calculatePlayerStats(raidData: RaidData[]): PlayerStats[] {
       else trend = 'Stable';
     }
 
-    playerStats.set(allycode, {
-      name: name,
-      allycode: allycode,
-      participation: participationRate,
-      raidsParticipated: participatedRaids,
-      totalRaids: totalRaids,
-      totalScore: totalScore,
-      avgScore: avgScore,
-      avgEstimate: avgEstimate,
-      bestScore: bestScore,
-      maxEstimated: maxEstimated,
-      lastScore: lastScore,
-      efficiency: efficiency,
-      lastActivity: lastActivity,
-      trend: trend,
-      raids: playerRaids, // Keep all raids for detailed table
-      last5Raids: playerLast5Raids // Add last 5 raids data
-    });
+    // Only include players who appeared in at least one of the last 5 raids
+    if (playerLast5Raids.length > 0) {
+      playerStats.set(allycode, {
+        name: name,
+        allycode: allycode,
+        participation: participationRate,
+        raidsParticipated: participatedRaids,
+        totalRaids: totalRaids,
+        totalScore: totalScore,
+        avgScore: avgScore,
+        avgEstimate: avgEstimate,
+        bestScore: bestScore,
+        maxEstimated: maxEstimated,
+        lastScore: lastScore,
+        efficiency: efficiency,
+        lastActivity: lastActivity,
+        trend: trend,
+        raids: playerRaids, // Keep all raids for detailed table
+        last5Raids: playerLast5Raids // Add last 5 raids data
+      });
+    }
   });
   
   return Array.from(playerStats.values());

@@ -9,11 +9,60 @@ interface Props {
 const { raidData } = Astro.props;
 ---
 
-<ChartContainer 
-  title="🏆 Performance Points Over Time" 
-  canvasId="rankingChart"
-  description="Player scores per raid • Higher values = better performance"
-/>
+<div class="glass-card p-3 sm:p-5 mt-6 sm:mt-8">
+  <h2 class="text-heading mb-3 sm:mb-5 text-center text-sm sm:text-xl">🏆 Performance Points Over Time</h2>
+  <p class="text-gray-400 text-center text-xs sm:text-sm mb-4">Player scores per raid • Higher values = better performance</p>
+  
+  <!-- Player Selection Dropdown -->
+  <div class="mb-3 sm:mb-5 flex flex-col sm:flex-row gap-3 sm:gap-5 items-stretch sm:items-center">
+    <label class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+      <span class="text-heading font-bold text-sm sm:text-base whitespace-nowrap">Select Players:</span>
+      <div class="relative w-full sm:max-w-xs">
+        <div class="multiselect-dropdown" id="playerMultiselect">
+          <div class="multiselect-selected form-control cursor-pointer flex justify-between items-center" onclick="toggleDropdown()">
+            <span id="selectedPlayersText">All players selected</span>
+            <span class="dropdown-arrow">▼</span>
+          </div>
+          <div class="multiselect-options hidden absolute z-50 w-full bg-gray-800 border border-white/30 rounded mt-1 max-h-80 overflow-y-auto" id="multiSelectOptions">
+            <div id="playerOptionsContainer">
+              <!-- Player options will be populated here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </label>
+    <div class="flex gap-2 flex-shrink-0">
+      <button onclick="selectAllPlayers()" class="btn-secondary text-xs px-3 py-2">All</button>
+      <button onclick="clearAllPlayers()" class="btn-secondary text-xs px-3 py-2">None</button>
+      <button onclick="selectTopPerformers()" class="btn-secondary text-xs px-3 py-2">Top 5</button>
+    </div>
+  </div>
+
+  <!-- Chart Container -->
+  <div class="chart-container">
+    <div class="relative mb-5 chart-responsive-container">
+      <canvas id="rankingChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<style>
+  .chart-responsive-container {
+    height: var(--chart-height, 600px);
+  }
+  
+  @media (max-width: 768px) {
+    .chart-responsive-container {
+      height: 300px;
+    }
+  }
+  
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .chart-responsive-container {
+      height: 400px;
+    }
+  }
+</style>
 
 <script define:vars={{ raidData }}>
   let rankingChart = null;
@@ -33,12 +82,132 @@ const { raidData } = Astro.props;
     secondaryAlpha: (alpha) => `rgba(${getCSSVariable('--color-secondary-rgb')}, ${alpha})`
   };
 
+  let allPlayerData = new Map();
+  let selectedPlayers = new Set();
+
   function waitForChartJS(callback) {
     if (typeof Chart !== 'undefined') {
       callback();
     } else {
       setTimeout(() => waitForChartJS(callback), 100);
     }
+  }
+
+  function createPlayerSelection() {
+    // Only use last 5 raids for charts
+    const sortedRaids = raidData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const last5Raids = sortedRaids.slice(-5);
+    
+    // Collect all players from last 5 raids
+    const playerScores = new Map();
+    
+    last5Raids.forEach(raid => {
+      raid.data.forEach(player => {
+        if (!playerScores.has(player.allycode)) {
+          playerScores.set(player.allycode, {
+            name: player.name,
+            scores: []
+          });
+        }
+        playerScores.get(player.allycode).scores.push({
+          date: raid.date,
+          score: player.participated ? (player.lastActualScore || 0) : 0
+        });
+      });
+    });
+
+    // Store all player data
+    allPlayerData = playerScores;
+    
+    const minAppearances = Math.ceil(last5Raids.length / 2);
+    
+    // Get eligible players (appeared in at least half of raids)
+    const eligiblePlayers = Array.from(playerScores.entries())
+      .filter(([allycode, data]) => data.scores.length >= minAppearances)
+      .sort((a, b) => a[1].name.localeCompare(b[1].name, undefined, { 
+        numeric: true, 
+        sensitivity: 'base',
+        ignorePunctuation: true 
+      })); // Unicode-aware alphabetical sorting
+
+    // Create player selection options
+    const container = document.getElementById('playerOptionsContainer');
+    container.innerHTML = '';
+    
+    eligiblePlayers.forEach(([allycode, data]) => {
+      const option = document.createElement('div');
+      option.className = 'multiselect-option flex items-center gap-2 p-2 hover:bg-white/10 cursor-pointer transition-colors';
+      option.onclick = () => togglePlayerSelection(allycode);
+      
+      option.innerHTML = `
+        <input type="checkbox" id="player-${allycode}" value="${allycode}" class="player-checkbox">
+        <label for="player-${allycode}" class="flex-1 text-sm cursor-pointer">${data.name}</label>
+      `;
+      
+      container.appendChild(option);
+    });
+
+    // Initially select all players
+    selectAllPlayers();
+  }
+
+  function toggleDropdown() {
+    const dropdown = document.getElementById('multiSelectOptions');
+    dropdown.classList.toggle('hidden');
+  }
+
+  function togglePlayerSelection(allycode) {
+    const checkbox = document.getElementById(`player-${allycode}`);
+    checkbox.checked = !checkbox.checked;
+    updateSelectedText();
+    updateRankingChart();
+  }
+
+  function updateSelectedText() {
+    const selectedCount = document.querySelectorAll('.player-checkbox:checked').length;
+    const totalCount = document.querySelectorAll('.player-checkbox').length;
+    const textElement = document.getElementById('selectedPlayersText');
+    
+    if (selectedCount === 0) {
+      textElement.textContent = 'No players selected';
+    } else if (selectedCount === totalCount) {
+      textElement.textContent = 'All players selected';
+    } else if (selectedCount <= 3) {
+      const selectedNames = Array.from(document.querySelectorAll('.player-checkbox:checked'))
+        .map(cb => cb.nextElementSibling.textContent);
+      textElement.textContent = selectedNames.join(', ');
+    } else {
+      textElement.textContent = `${selectedCount} players selected`;
+    }
+  }
+
+  function selectAllPlayers() {
+    document.querySelectorAll('.player-checkbox').forEach(cb => {
+      cb.checked = true;
+    });
+    updateSelectedText();
+    updateRankingChart();
+  }
+
+  function clearAllPlayers() {
+    document.querySelectorAll('.player-checkbox').forEach(cb => {
+      cb.checked = false;
+    });
+    updateSelectedText();
+    updateRankingChart();
+  }
+
+  function selectTopPerformers() {
+    // Clear all first
+    clearAllPlayers();
+    
+    // Select top 5
+    const checkboxes = document.querySelectorAll('.player-checkbox');
+    for (let i = 0; i < Math.min(5, checkboxes.length); i++) {
+      checkboxes[i].checked = true;
+    }
+    updateSelectedText();
+    updateRankingChart();
   }
 
   function createRankingChart() {
@@ -109,6 +278,19 @@ const { raidData } = Astro.props;
   }
 
   function updateRankingChart() {
+    if (!rankingChart) return;
+    
+    // Get selected players
+    const selectedPlayerCodes = Array.from(document.querySelectorAll('.player-checkbox:checked'))
+      .map(cb => cb.value);
+    
+    if (selectedPlayerCodes.length === 0) {
+      // No players selected, clear chart
+      rankingChart.data.datasets = [];
+      rankingChart.update();
+      return;
+    }
+    
     // Only use last 5 raids for charts
     const sortedRaids = raidData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const last5Raids = sortedRaids.slice(-5);
@@ -116,54 +298,30 @@ const { raidData } = Astro.props;
     // Update chart labels with last 5 raids
     rankingChart.data.labels = last5Raids.map(raid => raid.date);
     
-    const playerScores = new Map();
-    
-    last5Raids.forEach(raid => {
-      raid.data.forEach(player => {
-        // Include all players in raid data (participated or not)
-        if (!playerScores.has(player.allycode)) {
-          playerScores.set(player.allycode, {
-            name: player.name,
-            scores: []
-          });
-        }
-        // Add score (0 if didn't participate, actual score if participated)
-        playerScores.get(player.allycode).scores.push({
-          date: raid.date,
-          score: player.participated ? (player.lastActualScore || 0) : 0
-        });
-      });
-    });
-    
     const colors = [
-      themeColors.secondary, '#C0C0C0', '#CD7F32', themeColors.secondary, themeColors.primary, 
-      '#FF9800', '#9C27B0', '#F44336', '#00BCD4', themeColors.primary,
-      '#FF5722', '#607D8B', '#E91E63', '#3F51B5', '#009688'
+      themeColors.secondary, '#C0C0C0', '#CD7F32', themeColors.primary, '#FF9800', 
+      '#9C27B0', '#F44336', '#00BCD4', '#4CAF50', '#FF5722', 
+      '#607D8B', '#E91E63', '#3F51B5', '#009688', '#FFC107'
     ];
     
     rankingChart.data.datasets = [];
-    let colorIndex = 0;
     
-    const minAppearances = Math.ceil(last5Raids.length / 2);
-    
-    Array.from(playerScores.entries())
-      .filter(([allycode, data]) => data.scores.length >= minAppearances)
-      .sort((a, b) => {
-        const avgA = a[1].scores.reduce((sum, r) => sum + r.score, 0) / a[1].scores.length;
-        const avgB = b[1].scores.reduce((sum, r) => sum + r.score, 0) / b[1].scores.length;
-        return avgB - avgA;
-      })
-      .forEach(([allycode, data]) => {
+    // Create datasets only for selected players
+    selectedPlayerCodes.forEach((allycode, index) => {
+      if (allPlayerData.has(allycode)) {
+        const playerData = allPlayerData.get(allycode);
+        
+        // Map scores to all last 5 raids
         const fullScores = last5Raids.map(raid => {
-          const scoreEntry = data.scores.find(r => r.date === raid.date);
+          const scoreEntry = playerData.scores.find(r => r.date === raid.date);
           return scoreEntry ? scoreEntry.score : null;
         });
         
         rankingChart.data.datasets.push({
-          label: data.name,
+          label: playerData.name,
           data: fullScores,
-          borderColor: colors[colorIndex % colors.length],
-          backgroundColor: colors[colorIndex % colors.length] + '20',
+          borderColor: colors[index % colors.length],
+          backgroundColor: colors[index % colors.length] + '20',
           borderWidth: 2,
           fill: false,
           tension: 0.3,
@@ -171,15 +329,18 @@ const { raidData } = Astro.props;
           pointRadius: 4,
           pointHoverRadius: 6
         });
-        colorIndex++;
-      });
+      }
+    });
     
     rankingChart.update();
   }
 
   // Initialize chart when Chart.js is loaded
   function initRankingChart() {
-    waitForChartJS(createRankingChart);
+    waitForChartJS(() => {
+      createRankingChart();
+      createPlayerSelection();
+    });
   }
 
   // Auto-initialize when DOM is ready
@@ -189,7 +350,20 @@ const { raidData } = Astro.props;
     initRankingChart();
   }
 
-  // Make chart and update function available globally
+  // Make functions globally available
   window.rankingChart = () => rankingChart;
   window.updateRankingChart = updateRankingChart;
+  window.selectAllPlayers = selectAllPlayers;
+  window.clearAllPlayers = clearAllPlayers;
+  window.selectTopPerformers = selectTopPerformers;
+  window.toggleDropdown = toggleDropdown;
+  window.togglePlayerSelection = togglePlayerSelection;
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('playerMultiselect');
+    if (dropdown && !dropdown.contains(event.target)) {
+      document.getElementById('multiSelectOptions').classList.add('hidden');
+    }
+  });
 </script>

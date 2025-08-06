@@ -9,10 +9,10 @@ const { allPlayerStats, raidData } = Astro.props;
 
 // Helper function to get percentage class (matches the JavaScript version)
 function getPercentageClass(percentage: number): string {
-  if (percentage < 70) return 'bg-red-600/80 text-white font-bold';
-  if (percentage < 80) return 'bg-orange-500/80 text-white font-bold';
-  if (percentage < 95) return 'bg-yellow-500/80 text-white font-bold';
-  return 'bg-green-500/80 text-white font-bold';
+  if (percentage < 70) return 'status-poor';
+  if (percentage < 80) return 'status-warning';
+  if (percentage < 95) return 'status-good';
+  return 'status-excellent';
 }
 
 // Use only the last 5 raids for the detailed table
@@ -116,35 +116,35 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => b.avgEsti
     <table id="raidTable" class="w-full border-collapse text-xs sm:text-sm">
       <thead>
         <tr>
-          <th class="table-cell-sticky left-0 z-20 table-header px-2 sm:px-3 py-2 sm:py-3 text-left border-r-2 border-secondary">Player Name</th>
-          <th class="table-header px-2 sm:px-3 py-2 sm:py-3 text-left">Avg Estimate</th>
+          <th class="raid-table-header raid-table-header-sticky">Player Name</th>
+          <th class="raid-table-header">Avg Estimate</th>
           {last5RaidDates.map((raidDate: string) => {
             const raidAverage = raidAverages[raidDate];
             return (
-              <th class="table-header px-2 sm:px-3 py-2 sm:py-3 text-left">
+              <th class="raid-table-header">
                 <span set:html={`${formatDate(raidDate)}<br><small class="text-gray-400">(Ø ${new Intl.NumberFormat('de-DE').format(Math.round(raidAverage))})</small>`} />
               </th>
             );
           })}
-          <th class="table-header px-2 sm:px-3 py-2 sm:py-3 text-left">Max/Est</th>
+          <th class="raid-table-header">Max/Est</th>
         </tr>
       </thead>
       <tbody id="raidTableBody">
         {sortedPlayersData.map((player: any) => {
           const maxEstPercentage = player.avgEstimate > 0 ? ((player.bestScore / player.avgEstimate) * 100) : 0;
           return (
-            <tr data-name={player.name} data-avgestimate={player.avgEstimate} data-maxest={maxEstPercentage}>
-              <td class="table-cell-sticky">{player.name}</td>
-              <td class="table-cell-center">{new Intl.NumberFormat('de-DE').format(Math.round(player.avgEstimate))}</td>
+            <tr class="raid-table-row" data-name={player.name} data-avgestimate={player.avgEstimate} data-maxest={maxEstPercentage}>
+              <td class="raid-table-cell raid-table-cell-sticky">{player.name}</td>
+              <td class="raid-table-cell raid-table-cell-center">{new Intl.NumberFormat('de-DE').format(Math.round(player.avgEstimate))}</td>
               {last5RaidDates.map((raidDate: string) => {
                 const score = player.raids[raidDate];
                 
                 if (score === undefined) {
                   // Player was not in guild at this time - show gray
-                  return <td class="table-cell-center text-gray-500">-</td>;
+                  return <td class="raid-table-cell raid-table-cell-center text-gray-500">-</td>;
                 } else if (score === null) {
                   // Player was in guild but didn't participate - show red
-                  return <td class="table-cell-center bg-red-600/80 text-white font-bold">-</td>;
+                  return <td class="raid-table-cell status-poor">-</td>;
                 } else {
                   // Player participated - show with color coding based on their personal efficiency
                   const playerStat = allPlayerStats.find((p: any) => p.name === player.name);
@@ -154,13 +154,13 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => b.avgEsti
                   const percentageClass = getPercentageClass(raidEfficiency);
                   
                   return (
-                    <td class={`table-cell-center ${percentageClass}`}>
+                    <td class={`raid-table-cell ${percentageClass}`}>
                       {new Intl.NumberFormat('de-DE').format(score)} ({raidEfficiency.toFixed(0)}%)
                     </td>
                   );
                 }
               })}
-              <td class={`table-cell-center ${getPercentageClass(maxEstPercentage)}`}>
+              <td class={`raid-table-cell ${getPercentageClass(maxEstPercentage)}`}>
                 {maxEstPercentage.toFixed(0)}%
               </td>
             </tr>
@@ -168,13 +168,13 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => b.avgEsti
         })}
         
         <!-- Footer row with totals -->
-        <tr class="table-footer">
-          <td class="table-cell-sticky">📊 TOTAL ({allPlayersData.length} players)</td>
-          <td>{new Intl.NumberFormat('de-DE').format(Math.round(totalAvgEstimate))}</td>
+        <tr class="raid-table-footer">
+          <td class="raid-table-cell raid-table-cell-sticky">📊 TOTAL ({allPlayersData.length} players)</td>
+          <td class="raid-table-cell raid-table-cell-center">{new Intl.NumberFormat('de-DE').format(Math.round(totalAvgEstimate))}</td>
           {last5RaidDates.map((raidDate: string) => (
-            <td>{new Intl.NumberFormat('de-DE').format(raidTotals[raidDate])}</td>
+            <td class="raid-table-cell raid-table-cell-center">{new Intl.NumberFormat('de-DE').format(raidTotals[raidDate])}</td>
           ))}
-          <td class={getPercentageClass(avgMaxEstPercentage)}>
+          <td class={`raid-table-cell ${getPercentageClass(avgMaxEstPercentage)}`}>
             {avgMaxEstPercentage.toFixed(0)}%
           </td>
         </tr>
@@ -190,8 +190,8 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => b.avgEsti
   function sortRaidTable() {
     const sortBy = (document.getElementById('raidTableSort') as HTMLSelectElement).value;
     const tbody = document.getElementById('raidTableBody') as HTMLTableSectionElement;
-    const rows = Array.from(tbody.querySelectorAll('tr:not(.table-footer)')) as HTMLTableRowElement[];
-    const footerRow = tbody.querySelector('.table-footer') as HTMLTableRowElement;
+    const rows = Array.from(tbody.querySelectorAll('tr:not(.raid-table-footer)')) as HTMLTableRowElement[];
+    const footerRow = tbody.querySelector('.raid-table-footer') as HTMLTableRowElement;
     
     rows.sort((a, b) => {
       switch (sortBy) {
