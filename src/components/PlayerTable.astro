@@ -38,33 +38,38 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => b.participation - a.par
 
 <div class="glass-card p-3 sm:p-5 mt-6 sm:mt-8">
   <h2 class="text-heading mb-3 sm:mb-5 text-center text-sm sm:text-xl">📋 Player Statistics Overview</h2>
-  <div class="mb-3 sm:mb-5 flex flex-col sm:flex-row gap-3 sm:gap-5 items-stretch sm:items-center">
-    <label class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-      <span class="text-heading font-bold text-sm sm:text-base">Sort by:</span>
-      <select id="sortBy" onchange="applyFilters()" class="form-control">
-        <option value="participation">Participation %</option>
-        <option value="avgEstimate">Average Estimate</option>
-        <option value="bestScore">Best Score</option>
-        <option value="lastScore">Last Score</option>
-        <option value="efficiency">Efficiency %</option>
-        <option value="name">Player Name</option>
-      </select>
-    </label>
-  </div>
   <div class="mobile-scroll-hint">👈 Swipe to see more columns</div>
   <div class="overflow-x-auto mobile-table-wrapper">
     <table id="playersTable" class="w-full border-collapse text-xs sm:text-sm">
       <thead>
         <tr>
-          <th onclick="sortTable('name')" class="raid-table-header raid-table-header-sticky">Player Name</th>
-          <th onclick="sortTable('allycode')" class="raid-table-header">Ally Code</th>
-          <th onclick="sortTable('participation')" class="raid-table-header">Participation %</th>
-          <th onclick="sortTable('raidsParticipated')" class="raid-table-header">Raids (Last 5)</th>
-          <th onclick="sortTable('avgEstimate')" class="raid-table-header">Avg Estimate</th>
-          <th onclick="sortTable('bestScore')" class="raid-table-header">Best Score</th>
-          <th onclick="sortTable('lastScore')" class="raid-table-header">Last Score</th>
-          <th onclick="sortTable('efficiency')" class="raid-table-header">Efficiency %</th>
-          <th onclick="sortTable('trend')" class="raid-table-header">Trend</th>
+          <th onclick="sortTable('name')" class="raid-table-header raid-table-header-sticky cursor-pointer hover:bg-orange-400/30 select-none">
+            Player Name <span id="sort-name" class="sort-indicator"></span>
+          </th>
+          <th onclick="sortTable('allycode')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
+            Ally Code <span id="sort-allycode" class="sort-indicator"></span>
+          </th>
+          <th onclick="sortTable('participation')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
+            Participation % <span id="sort-participation" class="sort-indicator">▼</span>
+          </th>
+          <th onclick="sortTable('raidsParticipated')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
+            Raids (Last 5) <span id="sort-raidsParticipated" class="sort-indicator"></span>
+          </th>
+          <th onclick="sortTable('avgEstimate')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
+            Avg Estimate <span id="sort-avgEstimate" class="sort-indicator"></span>
+          </th>
+          <th onclick="sortTable('bestScore')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
+            Best Score <span id="sort-bestScore" class="sort-indicator"></span>
+          </th>
+          <th onclick="sortTable('lastScore')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
+            Last Score <span id="sort-lastScore" class="sort-indicator"></span>
+          </th>
+          <th onclick="sortTable('efficiency')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
+            Efficiency % <span id="sort-efficiency" class="sort-indicator"></span>
+          </th>
+          <th onclick="sortTable('trend')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
+            Trend <span id="sort-trend" class="sort-indicator"></span>
+          </th>
         </tr>
       </thead>
       <tbody id="playersTableBody">
@@ -96,44 +101,92 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => b.participation - a.par
 
 <script define:vars={{ allPlayerStats }}>
   let filteredData = [...allPlayerStats];
+  let currentSort = { column: 'participation', direction: 'desc' };
 
   function formatNumber(num) {
     if (num === 0) return '-';
     return new Intl.NumberFormat('de-DE').format(Math.round(num));
   }
 
-  function applyFilters() {
-    const sortBy = document.getElementById('sortBy').value;
+  function updateSortIndicators() {
+    // Clear all indicators
+    document.querySelectorAll('.sort-indicator').forEach(indicator => {
+      indicator.textContent = '';
+    });
+    
+    // Set current indicator
+    const indicator = document.getElementById(`sort-${currentSort.column}`);
+    if (indicator) {
+      indicator.textContent = currentSort.direction === 'desc' ? '▼' : '▲';
+    }
+  }
 
+  function applyFilters() {
     // Use all player stats directly (no filtering)
     filteredData = [...allPlayerStats];
-
-    sortData(sortBy);
+    sortData(currentSort.column);
     updatePlayerTable();
+    updateSortIndicators();
   }
 
   function sortData(criteria) {
+    // Toggle direction if same column
+    if (currentSort.column === criteria) {
+      currentSort.direction = currentSort.direction === 'desc' ? 'asc' : 'desc';
+    } else {
+      currentSort.column = criteria;
+      // Default direction for different column types
+      if (criteria === 'name' || criteria === 'allycode' || criteria === 'trend') {
+        currentSort.direction = 'asc';
+      } else {
+        currentSort.direction = 'desc';
+      }
+    }
+
+    const multiplier = currentSort.direction === 'desc' ? -1 : 1;
+
     filteredData.sort((a, b) => {
+      let comparison = 0;
+      
       switch (criteria) {
         case 'name':
-          return a.name.localeCompare(b.name);
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'allycode':
+          comparison = a.allycode.localeCompare(b.allycode);
+          break;
         case 'participation':
-          return b.participation - a.participation;
+          comparison = a.participation - b.participation;
+          break;
+        case 'raidsParticipated':
+          comparison = a.raidsParticipated - b.raidsParticipated;
+          break;
         case 'totalScore':
-          return b.totalScore - a.totalScore;
+          comparison = a.totalScore - b.totalScore;
+          break;
         case 'avgEstimate':
-          return b.avgEstimate - a.avgEstimate;
+          comparison = a.avgEstimate - b.avgEstimate;
+          break;
         case 'bestScore':
-          return b.bestScore - a.bestScore;
+          comparison = a.bestScore - b.bestScore;
+          break;
         case 'lastScore':
-          return b.lastScore - a.lastScore;
+          comparison = a.lastScore - b.lastScore;
+          break;
         case 'efficiency':
-          return b.efficiency - a.efficiency;
+          comparison = a.efficiency - b.efficiency;
+          break;
+        case 'trend':
+          comparison = a.trend.localeCompare(b.trend);
+          break;
         case 'lastActivity':
-          return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
+          comparison = new Date(a.lastActivity).getTime() - new Date(b.lastActivity).getTime();
+          break;
         default:
-          return b.participation - a.participation;
+          comparison = a.participation - b.participation;
       }
+      
+      return comparison * multiplier;
     });
   }
 
@@ -176,9 +229,13 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => b.participation - a.par
   }
 
   function sortTable(column) {
-    document.getElementById('sortBy').value = column;
-    applyFilters();
+    sortData(column);
+    updatePlayerTable();
+    updateSortIndicators();
   }
+
+  // Initialize with default sort
+  applyFilters();
 
   // Make functions globally available
   window.applyFilters = applyFilters;

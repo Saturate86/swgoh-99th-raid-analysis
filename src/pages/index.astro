@@ -107,14 +107,22 @@ function calculatePlayerStats(raidData: RaidData[]): PlayerStats[] {
     const activeLast5Scores = playerLast5Raids.filter(r => r.participated && r.score > 0);
     const lastScore = activeLast5Scores.length > 0 ? activeLast5Scores[activeLast5Scores.length - 1].score : 0;
     
-    // Calculate trend based on last 5 raids
+    // Calculate trend: Compare last raid score with average of last 5 raids
     let trend = 'No Data';
-    const activeLast5 = playerLast5Raids.filter(r => r.participated);
-    if (activeLast5.length >= 2) {
-      const recent = activeLast5.slice(-2);
-      const diff = recent[1].score - recent[0].score;
-      if (diff > 0) trend = 'Rising';
-      else if (diff < 0) trend = 'Falling';
+    const activeLast5 = playerLast5Raids.filter(r => r.participated && r.score > 0);
+    if (activeLast5.length >= 3) {
+      // Get the average of all last 5 raids
+      const avgLast5 = activeLast5.reduce((sum, r) => sum + r.score, 0) / activeLast5.length;
+      
+      // Get the most recent raid score
+      const lastRaidScore = activeLast5[activeLast5.length - 1].score;
+      
+      // Calculate percentage difference
+      const percentDiff = ((lastRaidScore - avgLast5) / avgLast5) * 100;
+      
+      // Classify trend based on percentage difference (using 10% threshold)
+      if (percentDiff > 10) trend = 'Rising';
+      else if (percentDiff < -10) trend = 'Falling';
       else trend = 'Stable';
     }
 

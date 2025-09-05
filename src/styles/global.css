@@ -249,7 +249,7 @@ body {
   /* Table Header Styles */
   .raid-table-header {
     @apply bg-orange-400/20 font-bold sticky top-0 cursor-pointer select-none text-white;
-    @apply text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-3 text-left;
+    @apply text-xs sm:text-sm px-2 sm:px-4 py-3 sm:py-4 text-left;
     text-shadow: 0 0 10px rgba(240, 145, 85, 0.5);
   }
   
@@ -264,7 +264,7 @@ body {
   
   /* Table Cell Styles */
   .raid-table-cell {
-    @apply text-xs sm:text-sm px-2 sm:px-3 py-2;
+    @apply text-xs sm:text-sm px-2 sm:px-4 py-2 sm:py-3;
   }
   
   .raid-table-cell-sticky {
@@ -452,6 +452,14 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Sort indicators for table headers */
+.sort-indicator {
+  font-size: 0.75rem;
+  margin-left: 4px;
+  color: var(--color-secondary);
+  font-weight: bold;
 }
 
 /* Responsive width adjustments */
