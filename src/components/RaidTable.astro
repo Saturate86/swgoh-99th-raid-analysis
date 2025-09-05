@@ -107,8 +107,8 @@ const formatDate = (dateStr: string) => {
   return dateStr; // Keep original ISO format like 2025-07-09
 };
 
-// Sort players by average estimate (default)
-const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => b.avgEstimate - a.avgEstimate);
+// Sort players by name ascending (default)
+const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => a.name.localeCompare(b.name));
 ---
 
 <div class="glass-card p-3 sm:p-5 mt-6 sm:mt-8">
@@ -119,7 +119,7 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => b.avgEsti
       <thead>
         <tr>
           <th onclick="sortRaidTable('name')" class="raid-table-header raid-table-header-sticky cursor-pointer hover:bg-orange-400/30 select-none">
-            Player Name <span id="raid-sort-name" class="sort-indicator"></span>
+            Player Name <span id="raid-sort-name" class="sort-indicator">▲</span>
           </th>
           <th onclick="sortRaidTable('avgEstimate')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
             Avg Estimate <span id="raid-sort-avgEstimate" class="sort-indicator">▼</span>
@@ -129,15 +129,15 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => b.avgEsti
             return (
               <th onclick={`sortRaidTable('${raidDate}')`} class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
                 <span set:html={`${formatDate(raidDate)}<br><small class="text-gray-400">(Ø ${new Intl.NumberFormat('de-DE').format(Math.round(raidAverage))})</small>`} />
-                <span id={`raid-sort-${raidDate}`} class="sort-indicator"></span>
+                <span id={`raid-sort-${raidDate}`} class="sort-indicator">▼</span>
               </th>
             );
           })}
           <th onclick="sortRaidTable('avgEst')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
-            Avg/Avg Est <span id="raid-sort-avgEst" class="sort-indicator"></span>
+            Avg/Avg Est <span id="raid-sort-avgEst" class="sort-indicator">▼</span>
           </th>
           <th onclick="sortRaidTable('maxEst')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
-            Max/Est <span id="raid-sort-maxEst" class="sort-indicator"></span>
+            Max/Est <span id="raid-sort-maxEst" class="sort-indicator">▼</span>
           </th>
         </tr>
       </thead>
@@ -214,37 +214,40 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => b.avgEsti
 </div>
 
 <script>
-  let currentRaidSort = { column: 'avgEstimate', direction: 'desc' };
+  // Load saved sort state from localStorage
+  const savedRaidSort = localStorage.getItem('raidTableSort');
+  let currentRaidSort = savedRaidSort 
+    ? JSON.parse(savedRaidSort) 
+    : { column: 'name', direction: 'asc' };
 
-  function updateRaidSortIndicators() {
-    // Clear all indicators
-    document.querySelectorAll('[id^="raid-sort-"]').forEach(indicator => {
-      indicator.textContent = '';
-    });
-    
-    // Set current indicator
-    const indicator = document.getElementById(`raid-sort-${currentRaidSort.column}`);
-    if (indicator) {
-      indicator.textContent = currentRaidSort.direction === 'desc' ? '▼' : '▲';
-    }
+  function saveRaidSortState() {
+    localStorage.setItem('raidTableSort', JSON.stringify(currentRaidSort));
   }
 
-  function sortRaidTable(sortBy?: string) {
-    if (sortBy) {
-      // Toggle direction if same column
-      if (currentRaidSort.column === sortBy) {
-        currentRaidSort.direction = currentRaidSort.direction === 'desc' ? 'asc' : 'desc';
+  function updateRaidSortIndicators() {
+    // Show all indicators with default direction
+    document.querySelectorAll('[id^="raid-sort-"]').forEach(indicator => {
+      const column = indicator.id.replace('raid-sort-', '');
+      
+      // Remove active class from all
+      indicator.classList.remove('active');
+      
+      if (column === currentRaidSort.column) {
+        // Active column shows current direction
+        indicator.textContent = currentRaidSort.direction === 'desc' ? '▼' : '▲';
+        indicator.classList.add('active');
       } else {
-        currentRaidSort.column = sortBy;
-        // Default direction for different column types
-        if (sortBy === 'name') {
-          currentRaidSort.direction = 'asc';
+        // Inactive columns show default direction
+        if (column === 'name') {
+          indicator.textContent = '▲'; // Default ascending for name
         } else {
-          currentRaidSort.direction = 'desc';
+          indicator.textContent = '▼'; // Default descending for numeric/date columns
         }
       }
-    }
+    });
+  }
 
+  function applySortRaidTableWithoutToggle() {
     const tbody = document.getElementById('raidTableBody') as HTMLTableSectionElement;
     const rows = Array.from(tbody.querySelectorAll('tr:not(.raid-table-footer)')) as HTMLTableRowElement[];
     const footerRow = tbody.querySelector('.raid-table-footer') as HTMLTableRowElement;
@@ -292,12 +295,40 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => b.avgEsti
     rows.forEach(row => tbody.appendChild(row));
     // Re-append footer row at the end
     tbody.appendChild(footerRow);
-    
+  }
+
+  function sortRaidTable(sortBy?: string) {
+    if (sortBy) {
+      // Toggle direction if same column
+      if (currentRaidSort.column === sortBy) {
+        currentRaidSort.direction = currentRaidSort.direction === 'desc' ? 'asc' : 'desc';
+      } else {
+        currentRaidSort.column = sortBy;
+        // Default direction for different column types
+        if (sortBy === 'name') {
+          currentRaidSort.direction = 'asc';
+        } else {
+          currentRaidSort.direction = 'desc';
+        }
+      }
+      
+      // Save sort state
+      saveRaidSortState();
+    }
+
+    applySortRaidTableWithoutToggle();
     updateRaidSortIndicators();
   }
 
-  // Initialize with default sort
+  // Initialize with default sort and indicators
+  applySortRaidTableWithoutToggle();
   updateRaidSortIndicators();
+  
+  // Initialize indicators on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    applySortRaidTableWithoutToggle();
+    updateRaidSortIndicators();
+  });
   
   // Make function globally available
   (window as any).sortRaidTable = sortRaidTable;

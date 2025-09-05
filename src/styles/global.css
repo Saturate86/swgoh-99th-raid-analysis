@@ -320,6 +320,18 @@ body {
     @apply text-red-400;
   }
   
+  /* Sort indicators */
+  .sort-indicator {
+    opacity: 0.4;
+    color: #e0e0e0;
+    transition: all 0.2s ease;
+  }
+  
+  .sort-indicator.active {
+    opacity: 1;
+    color: #F97316;
+  }
+
   /* Trend Indicators */
   .trend-positive {
     @apply text-green-500;

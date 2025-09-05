@@ -32,8 +32,8 @@ function getTrendClass(trend: string): string {
   return '';
 }
 
-// Sort players by participation by default
-const sortedPlayers = [...allPlayerStats].sort((a, b) => b.participation - a.participation);
+// Sort players by name ascending by default
+const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.name));
 ---
 
 <div class="glass-card p-3 sm:p-5 mt-6 sm:mt-8">
@@ -44,31 +44,31 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => b.participation - a.par
       <thead>
         <tr>
           <th onclick="sortTable('name')" class="raid-table-header raid-table-header-sticky cursor-pointer hover:bg-orange-400/30 select-none">
-            Player Name <span id="sort-name" class="sort-indicator"></span>
+            Player Name <span id="sort-name" class="sort-indicator">▲</span>
           </th>
           <th onclick="sortTable('allycode')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
-            Ally Code <span id="sort-allycode" class="sort-indicator"></span>
+            Ally Code <span id="sort-allycode" class="sort-indicator">▲</span>
           </th>
           <th onclick="sortTable('participation')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
             Participation % <span id="sort-participation" class="sort-indicator">▼</span>
           </th>
           <th onclick="sortTable('raidsParticipated')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
-            Raids (Last 5) <span id="sort-raidsParticipated" class="sort-indicator"></span>
+            Raids (Last 5) <span id="sort-raidsParticipated" class="sort-indicator">▼</span>
           </th>
           <th onclick="sortTable('avgEstimate')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
-            Avg Estimate <span id="sort-avgEstimate" class="sort-indicator"></span>
+            Avg Estimate <span id="sort-avgEstimate" class="sort-indicator">▼</span>
           </th>
           <th onclick="sortTable('bestScore')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
-            Best Score <span id="sort-bestScore" class="sort-indicator"></span>
+            Best Score <span id="sort-bestScore" class="sort-indicator">▼</span>
           </th>
           <th onclick="sortTable('lastScore')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
-            Last Score <span id="sort-lastScore" class="sort-indicator"></span>
+            Last Score <span id="sort-lastScore" class="sort-indicator">▼</span>
           </th>
           <th onclick="sortTable('efficiency')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
-            Efficiency % <span id="sort-efficiency" class="sort-indicator"></span>
+            Efficiency % <span id="sort-efficiency" class="sort-indicator">▼</span>
           </th>
           <th onclick="sortTable('trend')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
-            Trend <span id="sort-trend" class="sort-indicator"></span>
+            Trend <span id="sort-trend" class="sort-indicator">▲</span>
           </th>
         </tr>
       </thead>
@@ -101,48 +101,55 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => b.participation - a.par
 
 <script define:vars={{ allPlayerStats }}>
   let filteredData = [...allPlayerStats];
-  let currentSort = { column: 'participation', direction: 'desc' };
+  
+  // Load saved sort state from localStorage
+  const savedSort = localStorage.getItem('playerTableSort');
+  let currentSort = savedSort 
+    ? JSON.parse(savedSort) 
+    : { column: 'name', direction: 'asc' };
 
   function formatNumber(num) {
     if (num === 0) return '-';
     return new Intl.NumberFormat('de-DE').format(Math.round(num));
   }
 
+  function saveSortState() {
+    localStorage.setItem('playerTableSort', JSON.stringify(currentSort));
+  }
+
   function updateSortIndicators() {
-    // Clear all indicators
+    // Show all indicators with default direction
     document.querySelectorAll('.sort-indicator').forEach(indicator => {
-      indicator.textContent = '';
+      const column = indicator.id.replace('sort-', '');
+      
+      // Remove active class from all
+      indicator.classList.remove('active');
+      
+      if (column === currentSort.column) {
+        // Active column shows current direction
+        indicator.textContent = currentSort.direction === 'desc' ? '▼' : '▲';
+        indicator.classList.add('active');
+      } else {
+        // Inactive columns show default direction
+        if (column === 'name' || column === 'allycode' || column === 'trend') {
+          indicator.textContent = '▲'; // Default ascending for text columns
+        } else {
+          indicator.textContent = '▼'; // Default descending for numeric columns
+        }
+      }
     });
-    
-    // Set current indicator
-    const indicator = document.getElementById(`sort-${currentSort.column}`);
-    if (indicator) {
-      indicator.textContent = currentSort.direction === 'desc' ? '▼' : '▲';
-    }
   }
 
   function applyFilters() {
     // Use all player stats directly (no filtering)
     filteredData = [...allPlayerStats];
-    sortData(currentSort.column);
+    applySortWithoutToggle(currentSort.column);
     updatePlayerTable();
     updateSortIndicators();
   }
 
-  function sortData(criteria) {
-    // Toggle direction if same column
-    if (currentSort.column === criteria) {
-      currentSort.direction = currentSort.direction === 'desc' ? 'asc' : 'desc';
-    } else {
-      currentSort.column = criteria;
-      // Default direction for different column types
-      if (criteria === 'name' || criteria === 'allycode' || criteria === 'trend') {
-        currentSort.direction = 'asc';
-      } else {
-        currentSort.direction = 'desc';
-      }
-    }
-
+  function applySortWithoutToggle(criteria) {
+    // Apply sort without toggling direction (for initialization)
     const multiplier = currentSort.direction === 'desc' ? -1 : 1;
 
     filteredData.sort((a, b) => {
@@ -190,6 +197,26 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => b.participation - a.par
     });
   }
 
+  function sortData(criteria) {
+    // Toggle direction if same column
+    if (currentSort.column === criteria) {
+      currentSort.direction = currentSort.direction === 'desc' ? 'asc' : 'desc';
+    } else {
+      currentSort.column = criteria;
+      // Default direction for different column types
+      if (criteria === 'name' || criteria === 'allycode' || criteria === 'trend') {
+        currentSort.direction = 'asc';
+      } else {
+        currentSort.direction = 'desc';
+      }
+    }
+
+    // Save sort state
+    saveSortState();
+
+    applySortWithoutToggle(criteria);
+  }
+
   function updatePlayerTable() {
     const tbody = document.getElementById('playersTableBody');
     tbody.innerHTML = '';
@@ -234,8 +261,13 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => b.participation - a.par
     updateSortIndicators();
   }
 
-  // Initialize with default sort
+  // Initialize with default sort and indicators
   applyFilters();
+  
+  // Initialize indicators on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    updateSortIndicators();
+  });
 
   // Make functions globally available
   window.applyFilters = applyFilters;
