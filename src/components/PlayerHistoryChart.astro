@@ -28,7 +28,7 @@ const chartId = `playerHistoryChart-${playerName.replace(/\s+/g, '')}`;
 ---
 
 <div class="glass-card p-5">
-  <h3 class="text-heading mb-4 text-center">📊 Score History</h3>
+  <h2 class="text-heading mb-3 sm:mb-5 text-center text-sm sm:text-xl">📊 Score History</h2>
   <div class="relative chart-lg">
     <canvas id={chartId}></canvas>
   </div>
@@ -49,6 +49,7 @@ const chartId = `playerHistoryChart-${playerName.replace(/\s+/g, '')}`;
     const style = getComputedStyle(document.documentElement);
     const color1 = style.getPropertyValue('--chart-color-1').trim();
     const color2 = style.getPropertyValue('--chart-color-2').trim();
+    const color5 = style.getPropertyValue('--chart-color-5').trim();
 
     // Format dates for display
     const labels = chartData.map(d => {
@@ -57,7 +58,7 @@ const chartId = `playerHistoryChart-${playerName.replace(/\s+/g, '')}`;
     });
 
     const scores = chartData.map(d => d.score);
-    const participationColors = chartData.map(d => d.participated ? `rgba(${color1}, 0.8)` : `rgba(${color2}, 0.8)`);
+    const participationColors = chartData.map(d => d.participated ? `rgba(${color1}, 0.8)` : `rgba(${color1}, 0.3)`);
 
     new Chart(ctx, {
       type: 'line',
@@ -80,8 +81,8 @@ const chartId = `playerHistoryChart-${playerName.replace(/\s+/g, '')}`;
           {
             label: '5-Raid Moving Average',
             data: movingAverage,
-            borderColor: `rgba(${color2}, 0.8)`,
-            backgroundColor: `rgba(${color2}, 0.1)`,
+            borderColor: `rgba(${color5}, 0.8)`,
+            backgroundColor: `rgba(${color5}, 0.1)`,
             borderWidth: 2,
             borderDash: [5, 5],
             pointRadius: 0,

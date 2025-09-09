@@ -17,15 +17,44 @@ const { raidData } = Astro.props;
   <div class="mb-3 sm:mb-5 flex flex-col sm:flex-row gap-3 sm:gap-5 items-stretch sm:items-center">
     <label class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
       <span class="text-heading font-bold text-sm sm:text-base whitespace-nowrap">Select Players:</span>
-      <div class="relative w-full sm:max-w-xs">
+      <div class="relative w-full sm:w-80">
         <div class="multiselect-dropdown" id="playerMultiselect">
-          <div class="multiselect-selected form-control cursor-pointer flex justify-between items-center" onclick="toggleDropdown()">
+          <div class="multiselect-selected form-control cursor-pointer flex justify-between items-center" id="dropdownToggle">
             <span id="selectedPlayersText">All players selected</span>
             <span class="dropdown-arrow">▼</span>
           </div>
-          <div class="multiselect-options hidden absolute z-50 w-full bg-gray-800 border border-white/30 rounded mt-1 max-h-80 overflow-y-auto" id="multiSelectOptions">
-            <div id="playerOptionsContainer">
-              <!-- Player options will be populated here -->
+          <div class="multiselect-options hidden absolute z-50 w-full bg-gray-800 border border-white/30 rounded mt-1" id="multiSelectOptions">
+            <div class="p-2 border-b border-white/20">
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <input 
+                    type="text" 
+                    id="playerSearchInput" 
+                    class="w-full px-3 py-1 pr-8 bg-gray-700 text-white rounded border border-white/30 focus:border-cyan-400 focus:outline-none text-sm"
+                    placeholder="Search players..."
+                  />
+                  <button 
+                    id="clearSearchBtn"
+                    class="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1"
+                    style="display: none;"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <button 
+                  id="clearAllInDropdown"
+                  class="px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 rounded border border-red-600/30 transition-colors text-sm whitespace-nowrap"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+            <div class="max-h-72 overflow-y-auto">
+              <div id="playerOptionsContainer">
+                <!-- Player options will be populated here -->
+              </div>
             </div>
           </div>
         </div>
@@ -73,15 +102,15 @@ const { raidData } = Astro.props;
     return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
   }
 
-  // Get theme colors from CSS variables
-  const themeColors = {
-    primary: getCSSVariable('--color-primary'),
-    secondary: getCSSVariable('--color-secondary'),
-    primaryRgb: getCSSVariable('--color-primary-rgb'),
-    secondaryRgb: getCSSVariable('--color-secondary-rgb'),
-    primaryAlpha: (alpha) => `rgba(${getCSSVariable('--color-primary-rgb')}, ${alpha})`,
-    secondaryAlpha: (alpha) => `rgba(${getCSSVariable('--color-secondary-rgb')}, ${alpha})`
-  };
+  // Get chart colors from CSS variables  
+  const chartColors = [
+    getCSSVariable('--chart-color-1'),    // Blue
+    getCSSVariable('--chart-color-2'),    // Orange
+    getCSSVariable('--chart-color-3'),    // Green
+    getCSSVariable('--chart-color-4'),    // Red
+    getCSSVariable('--chart-color-5'),    // Purple
+    getCSSVariable('--chart-color-6'),    // Cyan
+  ];
 
   let allPlayerData = new Map();
   let selectedPlayers = new Set();
@@ -138,30 +167,86 @@ const { raidData } = Astro.props;
     eligiblePlayers.forEach(([allycode, data]) => {
       const option = document.createElement('div');
       option.className = 'multiselect-option flex items-center gap-2 p-2 hover:bg-white/10 cursor-pointer transition-colors';
-      option.onclick = () => togglePlayerSelection(allycode);
       
-      option.innerHTML = `
-        <input type="checkbox" id="player-${allycode}" value="${allycode}" class="player-checkbox">
-        <label for="player-${allycode}" class="flex-1 text-sm cursor-pointer">${data.name}</label>
-      `;
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.id = `player-${allycode}`;
+      checkbox.value = allycode;
+      checkbox.className = 'player-checkbox';
+      checkbox.checked = true; // Start with all selected
       
+      const label = document.createElement('label');
+      label.className = 'flex-1 text-sm cursor-pointer select-none';
+      label.textContent = data.name;
+      // Don't use 'for' attribute to avoid automatic toggle
+      
+      option.appendChild(checkbox);
+      option.appendChild(label);
       container.appendChild(option);
+      
+      // Handle checkbox clicks
+      checkbox.addEventListener('click', (e) => {
+        // Let the default checkbox behavior happen
+        // Just update our UI
+        setTimeout(() => {
+          updateSelectedText();
+          updateRankingChart();
+        }, 0);
+      });
+      
+      // Handle label/row clicks
+      label.addEventListener('click', (e) => {
+        e.preventDefault();
+        checkbox.checked = !checkbox.checked;
+        updateSelectedText();
+        updateRankingChart();
+      });
+      
+      // Handle option div clicks (empty space)
+      option.addEventListener('click', (e) => {
+        if (e.target === option) {
+          checkbox.checked = !checkbox.checked;
+          updateSelectedText();
+          updateRankingChart();
+        }
+      });
     });
 
-    // Initially select all players
-    selectAllPlayers();
+    // Update initial text and chart
+    updateSelectedText();
+    updateRankingChart();
   }
 
-  function toggleDropdown() {
+  function toggleDropdown(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     const dropdown = document.getElementById('multiSelectOptions');
-    dropdown.classList.toggle('hidden');
+    const searchInput = document.getElementById('playerSearchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    const isHidden = dropdown.classList.contains('hidden');
+    
+    if (isHidden) {
+      dropdown.classList.remove('hidden');
+      // Clear search and show all players when opening
+      if (searchInput) {
+        searchInput.value = '';
+        filterPlayers('');
+        // Focus search input for better UX
+        setTimeout(() => searchInput.focus(), 50);
+      }
+      // Hide clear button
+      if (clearBtn) {
+        clearBtn.style.display = 'none';
+      }
+    } else {
+      dropdown.classList.add('hidden');
+    }
   }
 
   function togglePlayerSelection(allycode) {
-    const checkbox = document.getElementById(`player-${allycode}`);
-    checkbox.checked = !checkbox.checked;
-    updateSelectedText();
-    updateRankingChart();
+    // Removed - no longer needed
   }
 
   function updateSelectedText() {
@@ -287,12 +372,12 @@ const { raidData } = Astro.props;
         },
         scales: {
           x: {
-            ticks: { color: '#e0e0e0' },
+            ticks: { color: 'rgba(255, 255, 255, 0.6)' },
             grid: { color: 'rgba(255, 255, 255, 0.1)' }
           },
           y: {
             ticks: { 
-              color: '#e0e0e0',
+              color: 'rgba(255, 255, 255, 0.6)',
               callback: function(value) {
                 return new Intl.NumberFormat('de-DE').format(value);
               }
@@ -301,7 +386,7 @@ const { raidData } = Astro.props;
             title: {
               display: true,
               text: 'Points',
-              color: themeColors.primary
+              color: 'rgba(255, 255, 255, 0.6)'
             }
           }
         },
@@ -336,11 +421,33 @@ const { raidData } = Astro.props;
     // Update chart labels with last 5 raids
     rankingChart.data.labels = last5Raids.map(raid => raid.date);
     
-    const colors = [
-      themeColors.secondary, '#C0C0C0', '#CD7F32', themeColors.primary, '#FF9800', 
-      '#9C27B0', '#F44336', '#00BCD4', '#4CAF50', '#FF5722', 
-      '#607D8B', '#E91E63', '#3F51B5', '#009688', '#FFC107'
+    // Create extended color palette with unique colors
+    const extendedColors = [];
+    const baseColors = chartColors.map(c => `rgba(${c}, 1)`);
+    
+    // First pass: use all base colors
+    extendedColors.push(...baseColors);
+    
+    // Additional unique colors if needed
+    const additionalColors = [
+      'rgba(255, 152, 0, 1)',    // Deep Orange
+      'rgba(156, 39, 176, 1)',   // Deep Purple  
+      'rgba(0, 188, 212, 1)',    // Teal
+      'rgba(76, 175, 80, 1)',    // Light Green
+      'rgba(255, 87, 34, 1)',    // Deep Orange variant
+      'rgba(96, 125, 139, 1)',   // Blue Grey
+      'rgba(233, 30, 99, 1)',    // Pink
+      'rgba(63, 81, 181, 1)',    // Indigo
+      'rgba(0, 150, 136, 1)',    // Teal variant
+      'rgba(255, 193, 7, 1)',    // Amber
+      'rgba(121, 85, 72, 1)',    // Brown
+      'rgba(158, 158, 158, 1)',  // Grey
+      'rgba(3, 169, 244, 1)',    // Light Blue
+      'rgba(139, 195, 74, 1)',   // Light Green variant
+      'rgba(255, 235, 59, 1)'    // Yellow
     ];
+    
+    extendedColors.push(...additionalColors);
     
     rankingChart.data.datasets = [];
     
@@ -358,8 +465,8 @@ const { raidData } = Astro.props;
         rankingChart.data.datasets.push({
           label: playerData.name,
           data: fullScores,
-          borderColor: colors[index % colors.length],
-          backgroundColor: colors[index % colors.length] + '20',
+          borderColor: extendedColors[index % extendedColors.length],
+          backgroundColor: extendedColors[index % extendedColors.length].replace('1)', '0.2)'),
           borderWidth: 2,
           fill: false,
           tension: 0.2,
@@ -373,11 +480,77 @@ const { raidData } = Astro.props;
     rankingChart.update();
   }
 
+  // Search functionality
+  function filterPlayers(searchTerm) {
+    const options = document.querySelectorAll('.multiselect-option');
+    const lowerSearch = searchTerm.toLowerCase();
+    
+    options.forEach(option => {
+      const label = option.querySelector('label');
+      if (label) {
+        const playerName = label.textContent.toLowerCase();
+        if (playerName.includes(lowerSearch)) {
+          option.style.display = 'flex';
+        } else {
+          option.style.display = 'none';
+        }
+      }
+    });
+  }
+
   // Initialize chart when Chart.js is loaded
   function initRankingChart() {
     waitForChartJS(() => {
       createRankingChart();
       createPlayerSelection();
+      
+      // Setup dropdown toggle
+      const dropdownToggle = document.getElementById('dropdownToggle');
+      if (dropdownToggle) {
+        dropdownToggle.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleDropdown();
+        });
+      }
+      
+      // Setup search functionality
+      const searchInput = document.getElementById('playerSearchInput');
+      const clearBtn = document.getElementById('clearSearchBtn');
+      const clearAllBtn = document.getElementById('clearAllInDropdown');
+      
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          const value = e.target.value;
+          filterPlayers(value);
+          // Show/hide clear button
+          if (clearBtn) {
+            clearBtn.style.display = value ? 'block' : 'none';
+          }
+        });
+        
+        // Prevent dropdown from closing when clicking search
+        searchInput.addEventListener('click', (e) => {
+          e.stopPropagation();
+        });
+      }
+      
+      if (clearBtn) {
+        clearBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          searchInput.value = '';
+          filterPlayers('');
+          clearBtn.style.display = 'none';
+          searchInput.focus();
+        });
+      }
+      
+      if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          clearAllPlayers();
+        });
+      }
     });
   }
 
@@ -398,11 +571,15 @@ const { raidData } = Astro.props;
   window.toggleDropdown = toggleDropdown;
   window.togglePlayerSelection = togglePlayerSelection;
 
-  // Close dropdown when clicking outside
-  document.addEventListener('click', function(event) {
-    const dropdown = document.getElementById('playerMultiselect');
-    if (dropdown && !dropdown.contains(event.target)) {
-      document.getElementById('multiSelectOptions').classList.add('hidden');
-    }
+  // Setup dropdown close on outside click
+  document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('click', (event) => {
+      const dropdown = document.getElementById('playerMultiselect');
+      const dropdownOptions = document.getElementById('multiSelectOptions');
+      
+      if (dropdown && dropdownOptions && !dropdown.contains(event.target)) {
+        dropdownOptions.classList.add('hidden');
+      }
+    });
   });
 </script>

@@ -117,6 +117,84 @@ npm run convert-csv  # Convert CSV files to JSON collections
 - All statistics focus on last 5 raids for relevance
 - Site rebuilds automatically on CSV upload via GitHub Actions
 
+## Chart Color System and Visual Consistency
+
+### Color Palette Architecture
+The application uses a centralized color system defined in `/src/styles/global.css`:
+- **Theme Colors**: Defined as Tailwind CSS variables (--color-primary, --color-secondary, etc.)
+- **Chart Colors**: Reference theme colors for consistency across all visualizations
+- **Access in JavaScript**: Use `getComputedStyle(document.documentElement).getPropertyValue(variable)`
+
+### Chart Color Standards
+```css
+/* Chart Color Palette - Using theme colors */
+--chart-color-1: var(--color-secondary-rgb);  /* Blue - Primary chart color */
+--chart-color-2: var(--color-primary-rgb);    /* Orange - Secondary chart color */
+--chart-color-3: var(--color-success-rgb);    /* Green - Third color */
+--chart-color-4: var(--color-danger-rgb);     /* Red - Fourth color */
+--chart-color-5: 168, 85, 247;                /* Purple - Fifth color (for dashed/derived data) */
+--chart-color-6: var(--color-accent-rgb);     /* Cyan - Sixth color */
+```
+
+### Visual Consistency Rules
+1. **Two-graph charts**: Always use Blue (color-1) and Orange (color-2)
+2. **Dashed lines**: Always use Purple (color-5) for moving averages and derived data
+3. **Axis colors**: Match the color of their respective graph line
+4. **Multi-line charts**: Use extended color palette to prevent duplicate colors
+5. **Exception**: Performance Points Over Time chart uses white scale for better visibility
+
+### Chart Heading Standards
+All chart headings use consistent responsive sizing:
+```html
+<h2 class="text-heading mb-3 sm:mb-5 text-center text-sm sm:text-xl">📊 Chart Title</h2>
+```
+
+## Important Implementation Details
+
+### Data Chronology
+- Charts display data from old to new (chronological order)
+- Tables can display newest first using spread operator: `[...data].reverse()`
+- Never mutate original arrays directly
+
+### Trend Calculations
+Score trends are calculated consistently across all pages:
+```javascript
+// Compare last raid score to average of last 5 raids
+const percentDiff = ((lastRaidScore - avgLast5) / avgLast5) * 100;
+// Thresholds: >10% = Rising, <-10% = Falling, else Stable
+```
+
+### BASE_URL Integration for Navigation
+All internal links must use PROJECT_CONFIG.baseUrl:
+```javascript
+import { PROJECT_CONFIG } from '../config/project.ts';
+const baseUrl = PROJECT_CONFIG.baseUrl.endsWith('/') ? 
+  PROJECT_CONFIG.baseUrl.slice(0, -1) : PROJECT_CONFIG.baseUrl;
+// Usage: <a href={`${baseUrl}/player/${allycode}`}>
+```
+
+### Player Detail Pages
+- Generate static paths for all unique allycodes
+- Filter raids where player was in guild (estimatedScore > 0 || score > 0)
+- Calculate statistics only for relevant raid periods
+
+## Common Issues and Solutions
+
+### Issue: Chart colors appear black
+**Solution**: Ensure CSS variables are properly loaded before accessing in JavaScript
+
+### Issue: Duplicate colors in multi-line charts
+**Solution**: Use extended color palette with 20+ unique colors
+
+### Issue: Charts display in wrong order
+**Solution**: Use spread operator to create copy for display: `[...data].reverse()`
+
+### Issue: Navigation links break on GitHub Pages
+**Solution**: Always include BASE_URL in href attributes
+
+### Issue: Inconsistent chart styling
+**Solution**: Centralize all chart configuration in CSS variables and reference consistently
+
 ## Guild Customization System
 - **Configuration File**: `data/guild-config.json` (user-editable)
   - `guildName`: Guild display name

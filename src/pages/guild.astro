@@ -110,7 +110,7 @@ function formatDate(dateStr: string): string {
 
   <!-- Main Chart - All Raids History -->
   <div class="glass-card p-5 mb-8">
-    <h3 class="text-heading mb-4 text-center">📊 Complete Raid History</h3>
+    <h2 class="text-heading mb-3 sm:mb-5 text-center text-sm sm:text-xl">📊 Complete Raid History</h2>
     <div class="chart-container chart-lg">
       <canvas id="guildHistoryChart"></canvas>
     </div>
@@ -174,7 +174,7 @@ function formatDate(dateStr: string): string {
 
   <!-- Participation Trends -->
   <div class="glass-card p-5 mb-8">
-    <h3 class="text-heading mb-4 text-center">📊 Participation Trends</h3>
+    <h2 class="text-heading mb-3 sm:mb-5 text-center text-sm sm:text-xl">📊 Participation Trends</h2>
     <div class="chart-container chart-md">
       <canvas id="participationChart"></canvas>
     </div>
@@ -226,7 +226,7 @@ function formatDate(dateStr: string): string {
             {
               label: '5-Raid Average',
               data: movingAvg5.map(r => r.value),
-              borderColor: `rgba(${chartColors.color2}, 1)`,
+              borderColor: `rgba(${chartColors.color5}, 1)`,
               borderDash: [5, 5],
               backgroundColor: 'transparent',
               borderWidth: 2,
@@ -236,8 +236,8 @@ function formatDate(dateStr: string): string {
             {
               label: 'Participants',
               data: allRaidData.map(r => r.participants),
-              borderColor: `rgba(${chartColors.color5}, 1)`,
-              backgroundColor: chartColors.alpha(chartColors.color5, 0.1),
+              borderColor: `rgba(${chartColors.color2}, 1)`,
+              backgroundColor: chartColors.alpha(chartColors.color2, 0.1),
               borderWidth: 2,
               tension: 0.2,
               yAxisID: 'y1'
@@ -278,7 +278,7 @@ function formatDate(dateStr: string): string {
               display: true,
               position: 'right',
               grid: { drawOnChartArea: false },
-              ticks: { color: `rgba(${chartColors.color5}, 0.8)` }
+              ticks: { color: `rgba(${chartColors.color2}, 0.8)` }
             }
           }
         }
