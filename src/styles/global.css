@@ -421,38 +421,52 @@ body {
   }
   
   /* Enhanced hover contrast for status cells */
-  .raid-table-row:hover .status-excellent {
+  .raid-table-row:hover .status-excellent,
+  .raid-table-row:focus .status-excellent,
+  .raid-table-row:active .status-excellent {
     background-color: rgb(34, 197, 94) !important;
     box-shadow: inset 0 0 20px rgba(34, 197, 94, 0.5) !important;
   }
   
-  .raid-table-row:hover .status-good {
+  .raid-table-row:hover .status-good,
+  .raid-table-row:focus .status-good,
+  .raid-table-row:active .status-good {
     background-color: rgb(234, 179, 8) !important;
     box-shadow: inset 0 0 20px rgba(234, 179, 8, 0.5) !important;
   }
   
-  .raid-table-row:hover .status-warning {
+  .raid-table-row:hover .status-warning,
+  .raid-table-row:focus .status-warning,
+  .raid-table-row:active .status-warning {
     background-color: rgb(249, 115, 22) !important;
     box-shadow: inset 0 0 20px rgba(249, 115, 22, 0.5) !important;
   }
   
-  .raid-table-row:hover .status-poor {
+  .raid-table-row:hover .status-poor,
+  .raid-table-row:focus .status-poor,
+  .raid-table-row:active .status-poor {
     background-color: rgb(220, 38, 38) !important;
     box-shadow: inset 0 0 20px rgba(220, 38, 38, 0.5) !important;
   }
   
   /* Enhanced hover contrast for participation cells */
-  .raid-table-row:hover .participation-excellent {
+  .raid-table-row:hover .participation-excellent,
+  .raid-table-row:focus .participation-excellent,
+  .raid-table-row:active .participation-excellent {
     background-color: rgba(34, 197, 94, 0.6) !important;
     box-shadow: inset 0 0 10px rgba(34, 197, 94, 0.3) !important;
   }
   
-  .raid-table-row:hover .participation-good {
+  .raid-table-row:hover .participation-good,
+  .raid-table-row:focus .participation-good,
+  .raid-table-row:active .participation-good {
     background-color: rgba(251, 146, 60, 0.6) !important;
     box-shadow: inset 0 0 10px rgba(251, 146, 60, 0.3) !important;
   }
   
-  .raid-table-row:hover .participation-poor {
+  .raid-table-row:hover .participation-poor,
+  .raid-table-row:focus .participation-poor,
+  .raid-table-row:active .participation-poor {
     background-color: rgba(239, 68, 68, 0.6) !important;
     box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.3) !important;
   }

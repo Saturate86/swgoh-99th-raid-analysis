@@ -80,23 +80,25 @@ const avgEfficiency = participatedRaids.length > 0
     <br />
     Your average efficiency: <span class="text-cyan-400 font-semibold">{avgEfficiency.toFixed(1)}%</span>
     <br />
-    Hover over cells to see exact dates and scores.
+    <span class="hidden sm:inline">Hover over cells to see exact dates and scores.</span>
+    <span class="sm:hidden">Tap on cells to see details.</span>
   </div>
   
   <div class="overflow-x-auto">
-    <div class="min-w-[600px] space-y-3">
+    <div class="min-w-0 space-y-2 sm:space-y-3">
       {sortedMonths.map(([monthKey, monthData]) => (
-        <div class="flex items-center gap-3">
-          <div class="text-gray-400 text-sm w-20 text-right">
+        <div class="flex items-center gap-2 sm:gap-3">
+          <div class="text-gray-400 text-xs sm:text-sm w-16 sm:w-20 text-right flex-shrink-0">
             {getMonthName(monthKey)}
           </div>
-          <div class="flex gap-1 flex-1">
+          {/* Desktop: Single row with horizontal scroll */}
+          <div class="hidden sm:flex gap-1 flex-1 min-w-0 overflow-x-auto">
             {Array.from({ length: 31 }, (_, i) => {
               const day = i + 1;
               const raid = monthData.raids.find(r => r.day === day);
               
               if (!raid) {
-                return <div class="w-6 h-6 bg-gray-800 rounded-sm"></div>;
+                return <div class="w-6 h-6 bg-gray-800 rounded-sm flex-shrink-0"></div>;
               }
               
               const color = getHeatmapColor(raid.efficiency, raid.participated);
@@ -106,42 +108,98 @@ const avgEfficiency = participatedRaids.length > 0
               
               return (
                 <div 
-                  class={`w-6 h-6 ${color} rounded-sm cursor-pointer hover:opacity-80 transition-opacity heatmap-cell`}
+                  class={`w-6 h-6 ${color} rounded-sm cursor-pointer hover:opacity-80 active:opacity-60 transition-opacity heatmap-cell flex-shrink-0`}
                   title={tooltip}
                   data-score={raid.score}
                   data-date={raid.date}
                   data-participated={raid.participated}
                   data-efficiency={raid.efficiency}
+                  tabindex="0"
                 ></div>
               );
             })}
+          </div>
+          
+          {/* Mobile: Multi-row grid layout */}
+          <div class="flex sm:hidden flex-1">
+            <div class="grid grid-cols-8 gap-0.5 w-full">
+              {Array.from({ length: 31 }, (_, i) => {
+                const day = i + 1;
+                const raid = monthData.raids.find(r => r.day === day);
+                
+                if (!raid) {
+                  return <div class="w-5 h-5 bg-gray-800 rounded-sm"></div>;
+                }
+                
+                const color = getHeatmapColor(raid.efficiency, raid.participated);
+                const tooltip = raid.participated 
+                  ? `Day ${day}: ${new Intl.NumberFormat('de-DE').format(Math.round(raid.score))} (${raid.efficiency.toFixed(0)}% efficiency)`
+                  : `Day ${day}: Did not participate`;
+                
+                return (
+                  <div 
+                    class={`w-5 h-5 ${color} rounded-sm cursor-pointer hover:opacity-80 active:opacity-60 transition-opacity heatmap-cell`}
+                    title={tooltip}
+                    data-score={raid.score}
+                    data-date={raid.date}
+                    data-participated={raid.participated}
+                    data-efficiency={raid.efficiency}
+                    tabindex="0"
+                  ></div>
+                );
+              })}
+            </div>
           </div>
         </div>
       ))}
     </div>
     
     <!-- Legend -->
-    <div class="mt-6 flex flex-col items-center gap-2">
-      <div class="flex items-center justify-center gap-4 text-xs">
-        <span class="text-gray-400">Low</span>
-        <div class="flex gap-1">
-          <div class="w-4 h-4 bg-red-600 rounded-sm" title="< 60% efficiency"></div>
-          <div class="w-4 h-4 bg-orange-600 rounded-sm" title="60-80% efficiency"></div>
-          <div class="w-4 h-4 bg-yellow-600 rounded-sm" title="80-90% efficiency"></div>
-          <div class="w-4 h-4 bg-green-600 rounded-sm" title="90-100% efficiency"></div>
-          <div class="w-4 h-4 bg-green-500 rounded-sm" title="100-110% efficiency"></div>
-          <div class="w-4 h-4 bg-purple-500 rounded-sm" title="> 110% efficiency"></div>
-        </div>
-        <span class="text-gray-400">High</span>
-        <div class="ml-4 flex gap-2">
-          <div class="flex items-center gap-1">
-            <div class="w-4 h-4 bg-gray-700 rounded-sm"></div>
-            <span class="text-gray-400">Not participated</span>
+    <div class="mt-4 sm:mt-6 flex flex-col items-center gap-3">
+      <!-- Mobile: Stack vertically, Desktop: Horizontal -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm w-full">
+        <!-- Efficiency Scale -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <span class="text-gray-400 text-xs">Low</span>
+          <div class="flex gap-1">
+            <div class="w-5 h-5 sm:w-4 sm:h-4 bg-red-600 rounded-sm" title="< 60% efficiency"></div>
+            <div class="w-5 h-5 sm:w-4 sm:h-4 bg-orange-600 rounded-sm" title="60-80% efficiency"></div>
+            <div class="w-5 h-5 sm:w-4 sm:h-4 bg-yellow-600 rounded-sm" title="80-90% efficiency"></div>
+            <div class="w-5 h-5 sm:w-4 sm:h-4 bg-green-600 rounded-sm" title="90-100% efficiency"></div>
+            <div class="w-5 h-5 sm:w-4 sm:h-4 bg-green-500 rounded-sm" title="100-110% efficiency"></div>
+            <div class="w-5 h-5 sm:w-4 sm:h-4 bg-purple-500 rounded-sm" title="> 110% efficiency"></div>
           </div>
+          <span class="text-gray-400 text-xs">High</span>
+        </div>
+        
+        <!-- Not Participated -->
+        <div class="flex items-center gap-2">
+          <div class="w-5 h-5 sm:w-4 sm:h-4 bg-gray-700 rounded-sm"></div>
+          <span class="text-gray-400 text-xs">Not participated</span>
         </div>
       </div>
-      <div class="text-xs text-gray-500">
+      
+      <div class="text-xs text-gray-500 text-center px-4">
         Efficiency: Actual Score / Estimated Score
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for mobile raid details -->
+<div id="raid-detail-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" style="display: none;">
+  <div class="bg-gray-800 rounded-lg shadow-xl border border-white/20 max-w-sm w-full mx-4">
+    <div class="flex justify-between items-center p-4 border-b border-white/20">
+      <h3 class="text-lg font-semibold text-white" id="modal-title">Raid Details</h3>
+      <button id="close-modal" class="text-gray-400 hover:text-white transition-colors p-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="p-6">
+      <div id="modal-content" class="text-gray-300 space-y-3 text-center">
+        <!-- Content will be populated by JavaScript -->
       </div>
     </div>
   </div>
@@ -152,69 +210,186 @@ const avgEfficiency = participatedRaids.length > 0
     position: relative;
   }
   
-  .heatmap-cell:hover::after {
-    content: attr(title);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0, 0, 0, 0.9);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-    font-size: 12px;
-    z-index: 10;
-    pointer-events: none;
-    margin-bottom: 4px;
+  /* Desktop tooltip */
+  @media (hover: hover) {
+    .heatmap-cell:hover::after {
+      content: attr(title);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 6px 10px;
+      border-radius: 4px;
+      white-space: nowrap;
+      font-size: 11px;
+      z-index: 20;
+      pointer-events: none;
+      margin-bottom: 4px;
+      max-width: 200px;
+      word-wrap: break-word;
+    }
+    
+    .heatmap-cell:hover::before {
+      content: '';
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: rgba(0, 0, 0, 0.9);
+      z-index: 20;
+      pointer-events: none;
+    }
   }
   
-  .heatmap-cell:hover::before {
-    content: '';
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 4px solid transparent;
-    border-top-color: rgba(0, 0, 0, 0.9);
+  /* Mobile focus state */
+  .heatmap-cell:focus {
+    outline: 2px solid rgba(34, 211, 238, 0.8);
+    outline-offset: 1px;
     z-index: 10;
-    pointer-events: none;
+  }
+  
+  /* Mobile active feedback */
+  .heatmap-cell:active {
+    transform: scale(0.95);
   }
 </style>
 
 <script>
-  // Add interactive tooltips with better positioning
+  // Add interactive tooltips and modal functionality
   document.addEventListener('DOMContentLoaded', () => {
     const cells = document.querySelectorAll('.heatmap-cell');
+    const modal = document.getElementById('raid-detail-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContent = document.getElementById('modal-content');
+    const closeModalBtn = document.getElementById('close-modal');
     
-    cells.forEach(cell => {
-      cell.addEventListener('mouseenter', (e) => {
-        const target = e.target as HTMLElement;
-        const score = target.dataset.score;
-        const date = target.dataset.date;
-        const participated = target.dataset.participated === 'true';
-        const efficiency = target.dataset.efficiency;
+    function formatCellInfo(target, isModal = false) {
+      const score = target.dataset.score;
+      const date = target.dataset.date;
+      const participated = target.dataset.participated === 'true';
+      const efficiency = target.dataset.efficiency;
+      
+      if (date) {
+        const formattedDate = new Date(date).toLocaleDateString('de-DE', {
+          weekday: 'long',
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
+        });
         
-        if (date) {
-          const formattedDate = new Date(date).toLocaleDateString('de-DE', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
+        if (isModal) {
+          let content = `<div class="text-cyan-400 font-semibold text-lg">${formattedDate}</div>`;
           
-          let tooltip = `${formattedDate}`;
           if (participated && score) {
-            tooltip += `: ${new Intl.NumberFormat('de-DE').format(parseInt(score))}`;
+            content += `<div class="flex items-center justify-center gap-2">
+                          <span class="text-2xl">⚡</span>
+                          <div>
+                            <div class="text-white font-bold text-xl">${new Intl.NumberFormat('de-DE').format(parseInt(score))}</div>
+                            <div class="text-gray-400 text-sm">Points scored</div>
+                          </div>
+                        </div>`;
+            
             if (efficiency) {
-              tooltip += ` (${parseFloat(efficiency).toFixed(0)}% efficiency)`;
+              const effNum = parseFloat(efficiency);
+              const effIcon = effNum >= 100 ? '🔥' : effNum >= 80 ? '⭐' : '📊';
+              const effColor = effNum >= 100 ? 'text-green-400' : effNum >= 80 ? 'text-yellow-400' : 'text-orange-400';
+              
+              content += `<div class="flex items-center justify-center gap-2">
+                           <span class="text-2xl">${effIcon}</span>
+                           <div>
+                             <div class="font-bold text-lg ${effColor}">${effNum.toFixed(1)}%</div>
+                             <div class="text-gray-400 text-sm">Efficiency</div>
+                           </div>
+                         </div>`;
             }
           } else {
-            tooltip += ': Did not participate';
+            content += `<div class="flex items-center justify-center gap-2">
+                         <span class="text-2xl">❌</span>
+                         <div>
+                           <div class="text-red-400 font-semibold">Did not participate</div>
+                         </div>
+                       </div>`;
           }
           
-          target.setAttribute('title', tooltip);
+          return content;
+        } else {
+          // Simple tooltip format
+          let info = formattedDate;
+          if (participated && score) {
+            info += ` - ${new Intl.NumberFormat('de-DE').format(parseInt(score))} points`;
+            if (efficiency) {
+              info += ` (${parseFloat(efficiency).toFixed(0)}% efficiency)`;
+            }
+          } else {
+            info += ' - Did not participate';
+          }
+          return info;
+        }
+      }
+      return isModal ? '<div>No data available</div>' : 'No data available';
+    }
+    
+    // Modal functions
+    function openModal(target) {
+      if (modal && modalContent && modalTitle) {
+        const content = formatCellInfo(target, true);
+        modalContent.innerHTML = content;
+        modalTitle.textContent = 'Raid Details';
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    
+    function closeModal() {
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    }
+    
+    // Event listeners
+    cells.forEach(cell => {
+      // Desktop hover tooltips
+      cell.addEventListener('mouseenter', (e) => {
+        const target = e.target as HTMLElement;
+        const info = formatCellInfo(target, false);
+        target.setAttribute('title', info);
+      });
+      
+      // Click handler - modal on mobile, tooltip on desktop
+      cell.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = e.target as HTMLElement;
+        
+        // Always open modal on click for better UX
+        openModal(target);
+      });
+      
+      // Keyboard navigation
+      cell.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openModal(e.target);
         }
       });
+    });
+    
+    // Close modal events
+    closeModalBtn?.addEventListener('click', closeModal);
+    
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
     });
   });
 </script>

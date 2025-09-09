@@ -166,7 +166,7 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => a.name.lo
           const avgEstPercentage = player.avgEstimate > 0 ? ((avgRaidScore / player.avgEstimate) * 100) : 0;
           
           return (
-            <tr class="raid-table-row" data-name={player.name} data-avgestimate={player.avgEstimate} data-avgest={avgEstPercentage} data-maxest={maxEstPercentage}>
+            <tr class="raid-table-row" tabindex="0" data-name={player.name} data-avgestimate={player.avgEstimate} data-avgest={avgEstPercentage} data-maxest={maxEstPercentage}>
               <td class="raid-table-cell raid-table-cell-sticky">{player.name}</td>
               <td class="raid-table-cell raid-table-cell-center">{new Intl.NumberFormat('de-DE').format(Math.round(player.avgEstimate))}</td>
               {last5RaidDates.map((raidDate: string) => {
