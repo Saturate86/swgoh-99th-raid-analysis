@@ -133,7 +133,7 @@ function calculatePlayerStats(raidData: RaidData[]): PlayerStats[] {
         allycode: allycode,
         participation: participationRate,
         raidsParticipated: participatedRaids,
-        totalRaids: totalRaids,
+        totalRaids: playerRaidEntries, // Use actual raids where player was in guild
         totalScore: totalScore,
         avgScore: avgScore,
         avgEstimate: avgEstimate,

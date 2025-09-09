@@ -258,13 +258,19 @@ body {
   }
   
   .raid-table-header-sticky {
-    @apply bg-orange-400/30 backdrop-blur-sm z-30;
-    @apply border-r-2 border-orange-400;
+    @apply sticky left-0 border-r-2 border-orange-400 z-30;
+    background-color: rgb(251, 146, 60); /* orange-400 without transparency */
+    backdrop-filter: blur(8px);
   }
   
   /* Table Cell Styles */
   .raid-table-cell {
     @apply text-xs sm:text-sm px-2 sm:px-4 py-2 sm:py-3;
+  }
+  
+  /* Remove border from last visible row when filtering */
+  .last-visible .raid-table-cell {
+    border-bottom: none;
   }
   
   .raid-table-cell-sticky {
@@ -332,6 +338,38 @@ body {
     color: #F97316;
   }
 
+  /* Switch Component */
+  .switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background-color: #374151;
+    border-radius: 12px;
+    transition: background-color 0.3s ease;
+    border: 1px solid #4B5563;
+  }
+  
+  .switch-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background-color: #9CA3AF;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+  }
+  
+  input:checked + .switch {
+    background-color: #F97316;
+    border-color: #F97316;
+  }
+  
+  input:checked + .switch .switch-slider {
+    transform: translateX(20px);
+    background-color: white;
+  }
+
   /* Trend Indicators */
   .trend-positive {
     @apply text-green-500;
@@ -375,7 +413,9 @@ body {
     }
     
     .raid-table-header-sticky {
-      @apply bg-orange-400/40 backdrop-blur-md z-30;
+      @apply sticky left-0 z-30;
+      background-color: rgb(251, 146, 60); /* orange-400 without transparency */
+      backdrop-filter: blur(8px);
     }
     
     .raid-table-cell-sticky {
