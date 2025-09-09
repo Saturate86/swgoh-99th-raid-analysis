@@ -184,6 +184,25 @@ if (rankTrend.length >= 3) {
 
 const currentRank = rankTrend.length > 0 ? rankTrend[rankTrend.length - 1] : 0;
 
+// Score Trend calculation (same logic as index.astro)
+let scoreTrend = 'No Data';
+const recentParticipatedRaids = playerHistory.filter(r => r.participated && r.score > 0).slice(-5);
+if (recentParticipatedRaids.length >= 3) {
+  // Get the average of last 5 participated raids
+  const avgLast5 = recentParticipatedRaids.reduce((sum, r) => sum + r.score, 0) / recentParticipatedRaids.length;
+  
+  // Get the most recent raid score
+  const lastRaidScore = recentParticipatedRaids[recentParticipatedRaids.length - 1].score;
+  
+  // Calculate percentage difference
+  const percentDiff = ((lastRaidScore - avgLast5) / avgLast5) * 100;
+  
+  // Classify trend based on percentage difference (using 10% threshold)
+  if (percentDiff > 10) scoreTrend = 'Rising';
+  else if (percentDiff < -10) scoreTrend = 'Falling';
+  else scoreTrend = 'Stable';
+}
+
 function formatNumber(num: number): string {
   if (num === 0) return '0';
   return new Intl.NumberFormat('de-DE').format(Math.round(num));
@@ -220,7 +239,7 @@ function formatDate(dateStr: string): string {
       currentStreak={currentStreak}
       maxStreak={maxStreak}
       performanceVsGuild={performanceVsGuild}
-      rankTrendDirection={rankTrendDirection}
+      rankTrendDirection={scoreTrend}
       currentRank={currentRank}
     />
     
@@ -278,7 +297,7 @@ function formatDate(dateStr: string): string {
             </tr>
           </thead>
           <tbody>
-            {playerHistory.reverse().map((raid) => {
+            {[...playerHistory].reverse().map((raid) => {
               const efficiency = raid.estimatedScore > 0 ? (raid.score / raid.estimatedScore) * 100 : 0;
               const inGuild = raid.estimatedScore > 0 || raid.score > 0;
               

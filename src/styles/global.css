@@ -38,6 +38,14 @@
   --color-text-primary: #e0e0e0;
   --color-text-secondary: var(--color-gray-400);
   --color-text-muted: var(--color-gray-500);
+  
+  /* Chart Color Palette */
+  --chart-color-1: 34, 211, 238;    /* Cyan - Primary chart color */
+  --chart-color-2: 255, 159, 64;    /* Orange - Secondary chart color */
+  --chart-color-3: 34, 197, 94;     /* Green - Third color */
+  --chart-color-4: 239, 68, 68;     /* Red - Fourth color */
+  --chart-color-5: 168, 85, 247;    /* Purple - Fifth color */
+  --chart-color-6: 236, 72, 153;    /* Pink - Sixth color */
 }
 
 /* Theme Utility Classes */

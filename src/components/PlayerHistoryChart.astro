@@ -45,6 +45,11 @@ const chartId = `playerHistoryChart-${playerName.replace(/\s+/g, '')}`;
     const ctx = document.getElementById(chartId);
     if (!ctx) return;
 
+    // Get CSS color variables
+    const style = getComputedStyle(document.documentElement);
+    const color1 = style.getPropertyValue('--chart-color-1').trim();
+    const color2 = style.getPropertyValue('--chart-color-2').trim();
+
     // Format dates for display
     const labels = chartData.map(d => {
       const date = new Date(d.date);
@@ -52,7 +57,7 @@ const chartId = `playerHistoryChart-${playerName.replace(/\s+/g, '')}`;
     });
 
     const scores = chartData.map(d => d.score);
-    const participationColors = chartData.map(d => d.participated ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)');
+    const participationColors = chartData.map(d => d.participated ? `rgba(${color1}, 0.8)` : `rgba(${color2}, 0.8)`);
 
     new Chart(ctx, {
       type: 'line',
@@ -62,21 +67,21 @@ const chartId = `playerHistoryChart-${playerName.replace(/\s+/g, '')}`;
           {
             label: 'Score',
             data: scores,
-            borderColor: 'rgba(34, 211, 238, 1)',
+            borderColor: `rgba(${color1}, 1)`,
             backgroundColor: participationColors,
             pointBackgroundColor: participationColors,
-            pointBorderColor: 'rgba(34, 211, 238, 1)',
+            pointBorderColor: `rgba(${color1}, 1)`,
             pointRadius: 5,
             pointHoverRadius: 7,
-            borderWidth: 2,
+            borderWidth: 3,
             tension: 0.1,
             fill: false
           },
           {
             label: '5-Raid Moving Average',
             data: movingAverage,
-            borderColor: 'rgba(251, 191, 36, 0.8)',
-            backgroundColor: 'rgba(251, 191, 36, 0.1)',
+            borderColor: `rgba(${color2}, 0.8)`,
+            backgroundColor: `rgba(${color2}, 0.1)`,
             borderWidth: 2,
             borderDash: [5, 5],
             pointRadius: 0,
@@ -142,7 +147,7 @@ const chartId = `playerHistoryChart-${playerName.replace(/\s+/g, '')}`;
               color: 'rgba(255, 255, 255, 0.1)'
             },
             ticks: {
-              color: 'rgba(255, 255, 255, 0.6)',
+              color: `rgba(${color1}, 0.8)`,
               callback: function(value) {
                 return new Intl.NumberFormat('de-DE', { 
                   notation: 'compact',

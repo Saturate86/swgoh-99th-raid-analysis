@@ -110,7 +110,7 @@ function formatDate(dateStr: string): string {
 
   <!-- Main Chart - All Raids History -->
   <div class="glass-card p-5 mb-8">
-    <h2 class="text-xl font-bold text-heading mb-4">Complete Raid History</h2>
+    <h3 class="text-heading mb-4 text-center">📊 Complete Raid History</h3>
     <div class="chart-container chart-lg">
       <canvas id="guildHistoryChart"></canvas>
     </div>
@@ -174,7 +174,7 @@ function formatDate(dateStr: string): string {
 
   <!-- Participation Trends -->
   <div class="glass-card p-5 mb-8">
-    <h2 class="text-xl font-bold text-heading mb-4">Participation Trends</h2>
+    <h3 class="text-heading mb-4 text-center">📊 Participation Trends</h3>
     <div class="chart-container chart-md">
       <canvas id="participationChart"></canvas>
     </div>
@@ -188,17 +188,15 @@ function formatDate(dateStr: string): string {
     return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
   }
 
-  // Get theme colors from CSS variables
-  const themeColors = {
-    primary: getCSSVariable('--color-primary'),
-    secondary: getCSSVariable('--color-secondary'),
-    accent: getCSSVariable('--color-accent'),
-    primaryRgb: getCSSVariable('--color-primary-rgb'),
-    secondaryRgb: getCSSVariable('--color-secondary-rgb'),
-    accentRgb: getCSSVariable('--color-accent-rgb'),
-    primaryAlpha: (alpha) => `rgba(${getCSSVariable('--color-primary-rgb')}, ${alpha})`,
-    secondaryAlpha: (alpha) => `rgba(${getCSSVariable('--color-secondary-rgb')}, ${alpha})`,
-    accentAlpha: (alpha) => `rgba(${getCSSVariable('--color-accent-rgb')}, ${alpha})`
+  // Get chart colors from CSS variables
+  const chartColors = {
+    color1: getCSSVariable('--chart-color-1'),    // Cyan (Blue)
+    color2: getCSSVariable('--chart-color-2'),    // Orange
+    color3: getCSSVariable('--chart-color-3'),    // Green
+    color4: getCSSVariable('--chart-color-4'),    // Red
+    color5: getCSSVariable('--chart-color-5'),    // Purple
+    color6: getCSSVariable('--chart-color-6'),    // Pink
+    alpha: (color, alpha) => `rgba(${color}, ${alpha})`
   };
 
   // Wait for Chart.js to be available
@@ -219,25 +217,28 @@ function formatDate(dateStr: string): string {
             {
               label: 'Total Score',
               data: allRaidData.map(r => r.totalScore),
-              borderColor: themeColors.accent,
-              backgroundColor: themeColors.accentAlpha(0.1),
+              borderColor: `rgba(${chartColors.color1}, 1)`,
+              backgroundColor: chartColors.alpha(chartColors.color1, 0.1),
+              borderWidth: 3,
               tension: 0.2,
               yAxisID: 'y'
             },
             {
               label: '5-Raid Average',
               data: movingAvg5.map(r => r.value),
-              borderColor: themeColors.secondary,
+              borderColor: `rgba(${chartColors.color2}, 1)`,
               borderDash: [5, 5],
               backgroundColor: 'transparent',
+              borderWidth: 2,
               tension: 0.2,
               yAxisID: 'y'
             },
             {
               label: 'Participants',
               data: allRaidData.map(r => r.participants),
-              borderColor: themeColors.primary,
-              backgroundColor: themeColors.primaryAlpha(0.1),
+              borderColor: `rgba(${chartColors.color5}, 1)`,
+              backgroundColor: chartColors.alpha(chartColors.color5, 0.1),
+              borderWidth: 2,
               tension: 0.2,
               yAxisID: 'y1'
             }
@@ -270,14 +271,14 @@ function formatDate(dateStr: string): string {
               display: true,
               position: 'left',
               grid: { color: 'rgba(75, 85, 99, 0.2)' },
-              ticks: { color: '#9ca3af' }
+              ticks: { color: `rgba(${chartColors.color1}, 0.8)` }
             },
             y1: {
               type: 'linear',
               display: true,
               position: 'right',
               grid: { drawOnChartArea: false },
-              ticks: { color: '#9ca3af' }
+              ticks: { color: `rgba(${chartColors.color5}, 0.8)` }
             }
           }
         }
@@ -295,16 +296,18 @@ function formatDate(dateStr: string): string {
             {
               label: 'Participation Rate (%)',
               data: allRaidData.map(r => (r.participants / r.totalPlayers * 100)),
-              borderColor: themeColors.accent,
-              backgroundColor: themeColors.accentAlpha(0.1),
+              borderColor: `rgba(${chartColors.color1}, 1)`,
+              backgroundColor: chartColors.alpha(chartColors.color1, 0.1),
+              borderWidth: 3,
               tension: 0.2,
               fill: true
             },
             {
-              label: 'Total Players',
-              data: allRaidData.map(r => r.totalPlayers),
-              borderColor: themeColors.secondary,
-              backgroundColor: themeColors.secondaryAlpha(0.1),
+              label: 'Number of Participants',
+              data: allRaidData.map(r => r.participants),
+              borderColor: `rgba(${chartColors.color2}, 1)`,
+              backgroundColor: chartColors.alpha(chartColors.color2, 0.1),
+              borderWidth: 2,
               tension: 0.2,
               yAxisID: 'y1'
             }
@@ -328,7 +331,7 @@ function formatDate(dateStr: string): string {
               display: true,
               position: 'left',
               grid: { color: 'rgba(75, 85, 99, 0.2)' },
-              ticks: { color: '#9ca3af' },
+              ticks: { color: `rgba(${chartColors.color1}, 0.8)` },
               min: 0,
               max: 100
             },
@@ -337,7 +340,7 @@ function formatDate(dateStr: string): string {
               display: true,
               position: 'right',
               grid: { drawOnChartArea: false },
-              ticks: { color: '#9ca3af' }
+              ticks: { color: `rgba(${chartColors.color2}, 0.8)` }
             }
           }
         }
