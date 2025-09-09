@@ -1,0 +1,237 @@
+---
+import type { PlayerRaidEntry } from '../types/raid.ts';
+
+interface Props {
+  playerHistory: PlayerRaidEntry[];
+  playerName: string;
+}
+
+const { playerHistory, playerName } = Astro.props;
+
+// Filter only raids where player was in guild and prepare chart data
+const chartData = playerHistory
+  .filter(r => r.estimatedScore > 0)
+  .map(raid => ({
+    date: raid.date,
+    actualScore: raid.participated ? raid.score : 0,
+    estimatedScore: raid.estimatedScore,
+    efficiency: raid.participated && raid.estimatedScore > 0 
+      ? (raid.score / raid.estimatedScore) * 100 
+      : 0,
+    participated: raid.participated
+  }));
+
+const chartId = `playerEfficiencyChart-${playerName.replace(/\s+/g, '')}`;
+---
+
+<div class="glass-card p-5">
+  <h3 class="text-heading mb-4 text-center">⚡ Efficiency Analysis (Actual vs Estimated)</h3>
+  <div class="relative" style="height: 400px;">
+    <canvas id={chartId}></canvas>
+  </div>
+</div>
+
+<script define:vars={{ chartData, chartId, playerName }}>
+  // Wait for Chart.js to be loaded
+  function initPlayerEfficiencyChart() {
+    if (typeof Chart === 'undefined') {
+      setTimeout(initPlayerEfficiencyChart, 100);
+      return;
+    }
+
+    const ctx = document.getElementById(chartId);
+    if (!ctx) return;
+
+    // Format dates for display
+    const labels = chartData.map(d => {
+      const date = new Date(d.date);
+      return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    });
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Actual Score',
+            data: chartData.map(d => d.actualScore),
+            borderColor: 'rgba(34, 197, 94, 1)',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            pointBackgroundColor: chartData.map(d => 
+              d.participated ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)'
+            ),
+            pointBorderColor: 'rgba(34, 197, 94, 1)',
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            borderWidth: 2,
+            tension: 0.1,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Estimated Score',
+            data: chartData.map(d => d.estimatedScore),
+            borderColor: 'rgba(168, 85, 247, 1)',
+            backgroundColor: 'rgba(168, 85, 247, 0.1)',
+            borderDash: [5, 5],
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            borderWidth: 2,
+            tension: 0.1,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Efficiency %',
+            data: chartData.map(d => d.efficiency),
+            borderColor: 'rgba(251, 191, 36, 1)',
+            backgroundColor: 'rgba(251, 191, 36, 0.1)',
+            pointBackgroundColor: chartData.map(d => {
+              if (!d.participated) return 'rgba(156, 163, 175, 0.5)';
+              if (d.efficiency >= 100) return 'rgba(34, 197, 94, 0.8)';
+              if (d.efficiency >= 80) return 'rgba(251, 191, 36, 0.8)';
+              return 'rgba(239, 68, 68, 0.8)';
+            }),
+            pointBorderColor: 'rgba(251, 191, 36, 1)',
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            borderWidth: 2,
+            tension: 0.2,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: {
+              color: 'rgba(255, 255, 255, 0.8)',
+              font: {
+                size: 12
+              }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.datasetIndex === 2) {
+                  // Efficiency percentage
+                  if (!chartData[context.dataIndex].participated) {
+                    return label + 'Did not participate';
+                  }
+                  label += context.parsed.y.toFixed(1) + '%';
+                } else {
+                  // Score values
+                  label += new Intl.NumberFormat('de-DE').format(Math.round(context.parsed.y));
+                  if (context.datasetIndex === 0 && !chartData[context.dataIndex].participated) {
+                    label += ' (Did not participate)';
+                  }
+                }
+                return label;
+              }
+            }
+          },
+          annotation: {
+            annotations: {
+              line1: {
+                type: 'line',
+                yMin: 100,
+                yMax: 100,
+                yScaleID: 'y1',
+                borderColor: 'rgba(34, 197, 94, 0.5)',
+                borderWidth: 1,
+                borderDash: [5, 5],
+                label: {
+                  content: '100% Efficiency',
+                  enabled: true,
+                  position: 'end',
+                  color: 'rgba(34, 197, 94, 0.8)',
+                  font: {
+                    size: 10
+                  }
+                }
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            display: true,
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.6)',
+              maxRotation: 45,
+              minRotation: 45,
+              autoSkip: true,
+              maxTicksLimit: 15
+            }
+          },
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.6)',
+              callback: function(value) {
+                return new Intl.NumberFormat('de-DE', { 
+                  notation: 'compact',
+                  compactDisplay: 'short' 
+                }).format(value);
+              }
+            },
+            title: {
+              display: true,
+              text: 'Score',
+              color: 'rgba(255, 255, 255, 0.6)'
+            },
+            beginAtZero: true
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            grid: {
+              drawOnChartArea: false
+            },
+            ticks: {
+              color: 'rgba(251, 191, 36, 0.8)',
+              callback: function(value) {
+                return value + '%';
+              }
+            },
+            title: {
+              display: true,
+              text: 'Efficiency %',
+              color: 'rgba(251, 191, 36, 0.8)'
+            },
+            min: 0,
+            max: 150
+          }
+        }
+      }
+    });
+  }
+
+  // Initialize chart when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPlayerEfficiencyChart);
+  } else {
+    initPlayerEfficiencyChart();
+  }
+</script>

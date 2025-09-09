@@ -1,0 +1,312 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../components/Layout.astro';
+import PlayerStatsCards from '../../components/PlayerStatsCards.astro';
+import PlayerHistoryChart from '../../components/PlayerHistoryChart.astro';
+import PlayerEfficiencyChart from '../../components/PlayerEfficiencyChart.astro';
+import PlayerHeatmap from '../../components/PlayerHeatmap.astro';
+import type { RaidData, PlayerRaidEntry } from '../../types/raid.ts';
+import '../../styles/global.css';
+
+export async function getStaticPaths() {
+  const allRaids = await getCollection('raids');
+  
+  // Collect all unique allycodes
+  const allycodes = new Set<string>();
+  allRaids.forEach(raid => {
+    raid.data.players.forEach(player => {
+      allycodes.add(player.allycode);
+    });
+  });
+  
+  // Create paths for each player
+  return Array.from(allycodes).map(allycode => ({
+    params: { allycode },
+  }));
+}
+
+const { allycode } = Astro.params;
+
+// Get all raids and sort by date
+const allRaids = await getCollection('raids');
+const sortedRaids = allRaids.sort((a, b) => new Date(a.data.date).getTime() - new Date(b.data.date).getTime());
+
+// Extract player data from all raids and calculate guild averages
+let playerName = '';
+const playerHistory: PlayerRaidEntry[] = [];
+const allRaidDates = sortedRaids.map(r => r.data.date);
+const guildAverages = new Map<string, number>();
+
+sortedRaids.forEach(raid => {
+  // Calculate guild average for this raid
+  const participatingPlayers = raid.data.players.filter(p => p.participated && p.lastActualScore > 0);
+  const guildAvg = participatingPlayers.length > 0 
+    ? participatingPlayers.reduce((sum, p) => sum + p.lastActualScore, 0) / participatingPlayers.length 
+    : 0;
+  guildAverages.set(raid.data.date, guildAvg);
+  
+  const playerData = raid.data.players.find(p => p.allycode === allycode);
+  if (playerData) {
+    playerName = playerData.name;
+    playerHistory.push({
+      date: raid.data.date,
+      score: playerData.lastActualScore,
+      participated: playerData.participated,
+      estimatedScore: playerData.estimatedScore
+    });
+  } else {
+    // Player was not in guild for this raid
+    playerHistory.push({
+      date: raid.data.date,
+      score: 0,
+      participated: false,
+      estimatedScore: 0
+    });
+  }
+});
+
+// Calculate statistics
+const raidsInGuild = playerHistory.filter(r => r.estimatedScore > 0 || r.score > 0).length;
+const raidsParticipated = playerHistory.filter(r => r.participated).length;
+const participationRate = raidsInGuild > 0 ? (raidsParticipated / raidsInGuild) * 100 : 0;
+
+// All-time statistics
+const allScores = playerHistory.filter(r => r.participated && r.score > 0).map(r => r.score);
+const totalScore = allScores.reduce((sum, score) => sum + score, 0);
+const avgScore = allScores.length > 0 ? totalScore / allScores.length : 0;
+const bestScore = allScores.length > 0 ? Math.max(...allScores) : 0;
+const worstScore = allScores.length > 0 ? Math.min(...allScores) : 0;
+
+// Recent statistics (last 5 raids where player was in guild)
+const recentRaids = playerHistory.filter(r => r.estimatedScore > 0 || r.score > 0).slice(-5);
+const recentScores = recentRaids.filter(r => r.participated && r.score > 0).map(r => r.score);
+const recentAvgScore = recentScores.length > 0 ? recentScores.reduce((sum, s) => sum + s, 0) / recentScores.length : 0;
+const recentBestScore = recentScores.length > 0 ? Math.max(...recentScores) : 0;
+const recentParticipated = recentRaids.filter(r => r.participated).length;
+const recentParticipationRate = recentRaids.length > 0 ? (recentParticipated / recentRaids.length) * 100 : 0;
+
+// Efficiency calculation
+const raidsWithEstimate = playerHistory.filter(r => r.participated && r.estimatedScore > 0);
+const totalEstimated = raidsWithEstimate.reduce((sum, r) => sum + r.estimatedScore, 0);
+const totalActual = raidsWithEstimate.reduce((sum, r) => sum + r.score, 0);
+const overallEfficiency = totalEstimated > 0 ? (totalActual / totalEstimated) * 100 : 0;
+
+// Consistency (standard deviation)
+const mean = avgScore;
+const variance = allScores.length > 0 
+  ? allScores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / allScores.length 
+  : 0;
+const stdDev = Math.sqrt(variance);
+const consistencyScore = mean > 0 ? (1 - (stdDev / mean)) * 100 : 0;
+
+// Growth rate (compare first participated raids to last participated raids where player was in guild)
+const participatedRaids = playerHistory.filter(r => r.participated && r.score > 0);
+const firstRaids = participatedRaids.slice(0, Math.min(3, Math.floor(participatedRaids.length / 2)));
+const firstAvg = firstRaids.length > 0 ? firstRaids.reduce((sum, r) => sum + r.score, 0) / firstRaids.length : 0;
+const lastRaids = participatedRaids.slice(-Math.min(3, Math.floor(participatedRaids.length / 2)));
+const lastAvg = lastRaids.length > 0 ? lastRaids.reduce((sum, r) => sum + r.score, 0) / lastRaids.length : 0;
+const growthRate = firstAvg > 0 && lastAvg > 0 ? ((lastAvg - firstAvg) / firstAvg) * 100 : 0;
+
+// Find best and worst 5 performances
+const performanceData = playerHistory
+  .filter(r => r.participated && r.score > 0)
+  .map(r => ({ date: r.date, score: r.score }))
+  .sort((a, b) => b.score - a.score);
+
+const best5Performances = performanceData.slice(0, 5);
+const worst5Performances = performanceData.slice(-5).reverse();
+
+// Streak tracking - only count raids where player was in guild
+const guildRaids = playerHistory.filter(r => r.estimatedScore > 0 || r.score > 0);
+let currentStreak = 0;
+let maxStreak = 0;
+let tempStreak = 0;
+let streakBroken = false;
+
+for (let i = guildRaids.length - 1; i >= 0; i--) {
+  const raid = guildRaids[i];
+  if (raid.participated) {
+    tempStreak++;
+    maxStreak = Math.max(maxStreak, tempStreak);
+    if (!streakBroken) {
+      currentStreak = tempStreak;
+    }
+  } else {
+    tempStreak = 0;
+    streakBroken = true;
+  }
+}
+
+// Performance vs Guild calculation
+const playerParticipatedRaids = playerHistory.filter(r => r.participated && r.score > 0);
+let performanceVsGuild = 0;
+if (playerParticipatedRaids.length > 0) {
+  const playerScoresWithGuildAvg = playerParticipatedRaids.map(raid => {
+    const guildAvg = guildAverages.get(raid.date) || 0;
+    return {
+      playerScore: raid.score,
+      guildAvg: guildAvg,
+      percentDiff: guildAvg > 0 ? ((raid.score - guildAvg) / guildAvg) * 100 : 0
+    };
+  });
+  performanceVsGuild = playerScoresWithGuildAvg.reduce((sum, r) => sum + r.percentDiff, 0) / playerScoresWithGuildAvg.length;
+}
+
+// Rank Trend calculation (last 5 raids)
+const recentGuildRaids = playerHistory.filter(r => r.estimatedScore > 0 || r.score > 0).slice(-5);
+const rankTrend: number[] = [];
+recentGuildRaids.forEach(raid => {
+  // Get all players for this raid date
+  const raidData = sortedRaids.find(r => r.data.date === raid.date);
+  if (raidData && raid.participated) {
+    const allScores = raidData.data.players
+      .filter(p => p.participated && p.lastActualScore > 0)
+      .map(p => ({ allycode: p.allycode, score: p.lastActualScore }))
+      .sort((a, b) => b.score - a.score);
+    
+    const playerRank = allScores.findIndex(p => p.allycode === allycode) + 1;
+    if (playerRank > 0) {
+      rankTrend.push(playerRank);
+    }
+  }
+});
+
+// Calculate rank trend direction
+let rankTrendDirection = 'Stable';
+if (rankTrend.length >= 3) {
+  const avgFirstHalf = rankTrend.slice(0, Math.floor(rankTrend.length / 2)).reduce((a, b) => a + b, 0) / Math.floor(rankTrend.length / 2);
+  const avgSecondHalf = rankTrend.slice(-Math.floor(rankTrend.length / 2)).reduce((a, b) => a + b, 0) / Math.floor(rankTrend.length / 2);
+  
+  // Lower rank number = better position
+  if (avgSecondHalf < avgFirstHalf - 1) rankTrendDirection = 'Improving';
+  else if (avgSecondHalf > avgFirstHalf + 1) rankTrendDirection = 'Declining';
+}
+
+const currentRank = rankTrend.length > 0 ? rankTrend[rankTrend.length - 1] : 0;
+
+function formatNumber(num: number): string {
+  if (num === 0) return '0';
+  return new Intl.NumberFormat('de-DE').format(Math.round(num));
+}
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+---
+
+<Layout title={`${playerName} - Player Details`}>
+  <div class="mb-6">
+    <a href="/" class="text-cyan-400 hover:text-cyan-300 mb-4 inline-block">← Back to Overview</a>
+    
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold text-cyan-400 mb-2">{playerName}</h1>
+      <p class="text-gray-400">Ally Code: {allycode}</p>
+    </div>
+    
+    <PlayerStatsCards 
+      totalRaids={raidsInGuild}
+      raidsParticipated={raidsParticipated}
+      participationRate={participationRate}
+      avgScore={avgScore}
+      bestScore={bestScore}
+      worstScore={worstScore}
+      recentAvgScore={recentAvgScore}
+      recentBestScore={recentBestScore}
+      recentParticipationRate={recentParticipationRate}
+      overallEfficiency={overallEfficiency}
+      consistencyScore={consistencyScore}
+      growthRate={growthRate}
+      currentStreak={currentStreak}
+      maxStreak={maxStreak}
+      performanceVsGuild={performanceVsGuild}
+      rankTrendDirection={rankTrendDirection}
+      currentRank={currentRank}
+    />
+    
+    <div class="grid grid-cols-1 gap-6 mb-8">
+      <PlayerHistoryChart playerHistory={playerHistory} playerName={playerName} />
+      <PlayerEfficiencyChart playerHistory={playerHistory} playerName={playerName} />
+      <PlayerHeatmap playerHistory={playerHistory} playerName={playerName} />
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div class="glass-card p-5">
+        <h3 class="text-heading mb-4 text-center">🏆 Best 5 Performances</h3>
+        <div class="space-y-2">
+          {best5Performances.map((perf, idx) => (
+            <div class="flex justify-between items-center p-2 bg-green-500/10 rounded">
+              <span class="text-green-400">#{idx + 1}</span>
+              <span class="text-gray-300">{formatDate(perf.date)}</span>
+              <span class="text-cyan-400 font-bold">{formatNumber(perf.score)}</span>
+            </div>
+          ))}
+          {best5Performances.length === 0 && (
+            <p class="text-gray-400 text-center">No data available</p>
+          )}
+        </div>
+      </div>
+      
+      <div class="glass-card p-5">
+        <h3 class="text-heading mb-4 text-center">📉 Worst 5 Performances</h3>
+        <div class="space-y-2">
+          {worst5Performances.map((perf, idx) => (
+            <div class="flex justify-between items-center p-2 bg-red-500/10 rounded">
+              <span class="text-red-400">#{idx + 1}</span>
+              <span class="text-gray-300">{formatDate(perf.date)}</span>
+              <span class="text-cyan-400 font-bold">{formatNumber(perf.score)}</span>
+            </div>
+          ))}
+          {worst5Performances.length === 0 && (
+            <p class="text-gray-400 text-center">No data available</p>
+          )}
+        </div>
+      </div>
+    </div>
+    
+    <div class="glass-card p-5">
+      <h3 class="text-heading mb-4 text-center">📊 Complete Raid History</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-sm">
+          <thead>
+            <tr>
+              <th class="raid-table-header">Date</th>
+              <th class="raid-table-header">Score</th>
+              <th class="raid-table-header">Estimated</th>
+              <th class="raid-table-header">Efficiency</th>
+              <th class="raid-table-header">Participated</th>
+            </tr>
+          </thead>
+          <tbody>
+            {playerHistory.reverse().map((raid) => {
+              const efficiency = raid.estimatedScore > 0 ? (raid.score / raid.estimatedScore) * 100 : 0;
+              const inGuild = raid.estimatedScore > 0 || raid.score > 0;
+              
+              return inGuild ? (
+                <tr class="raid-table-row">
+                  <td class="raid-table-cell">{formatDate(raid.date)}</td>
+                  <td class="raid-table-cell">{raid.participated ? formatNumber(raid.score) : '-'}</td>
+                  <td class="raid-table-cell">{formatNumber(raid.estimatedScore)}</td>
+                  <td class="raid-table-cell">
+                    {raid.participated ? (
+                      <span class={efficiency >= 100 ? 'text-green-400' : efficiency >= 80 ? 'text-yellow-400' : 'text-red-400'}>
+                        {efficiency.toFixed(1)}%
+                      </span>
+                    ) : '-'}
+                  </td>
+                  <td class="raid-table-cell">
+                    {raid.participated ? (
+                      <span class="text-green-400">✓</span>
+                    ) : (
+                      <span class="text-red-400">✗</span>
+                    )}
+                  </td>
+                </tr>
+              ) : null;
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</Layout>

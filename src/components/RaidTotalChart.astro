@@ -9,10 +9,34 @@ interface Props {
 const { raidData } = Astro.props;
 ---
 
-<ChartContainer 
-  title="📊 Total Raid Points Over Time" 
-  canvasId="raidTotalChart"
-/>
+<div class="glass-card p-3 sm:p-5 mt-6 sm:mt-8">
+  <h2 class="text-heading mb-3 sm:mb-5 text-center text-sm sm:text-xl">📊 Total Raid Points Over Time</h2>
+  <p class="text-gray-400 text-center text-xs sm:text-sm mb-4">Total guild performance • Points and participation</p>
+  
+  <div class="chart-container">
+    <div class="relative mb-5 chart-responsive-container">
+      <canvas id="raidTotalChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<style>
+  .chart-responsive-container {
+    height: var(--chart-height, 600px);
+  }
+  
+  @media (max-width: 768px) {
+    .chart-responsive-container {
+      height: 300px;
+    }
+  }
+  
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .chart-responsive-container {
+      height: 400px;
+    }
+  }
+</style>
 
 <script define:vars={{ raidData }}>
   let raidTotalChart = null;
@@ -121,7 +145,11 @@ const { raidData } = Astro.props;
             type: 'linear',
             display: true,
             position: 'right',
-            ticks: { color: themeColors.primary },
+            ticks: { 
+              color: themeColors.primary,
+              stepSize: 1,
+              precision: 0
+            },
             grid: { drawOnChartArea: false },
             title: {
               display: true,

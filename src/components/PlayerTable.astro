@@ -87,7 +87,11 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
       <tbody id="playersTableBody">
         {sortedPlayers.map((player) => (
           <tr class="raid-table-row">
-            <td class="raid-table-cell raid-table-cell-sticky">{player.name}</td>
+            <td class="raid-table-cell raid-table-cell-sticky">
+              <a href={`/player/${player.allycode}`} class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors">
+                {player.name}
+              </a>
+            </td>
             <td class="raid-table-cell">{player.allycode}</td>
             <td class={`raid-table-cell ${getParticipationClass(player.participation)}`}>
               {player.participation.toFixed(1)}%
@@ -271,7 +275,11 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
       else if (player.trend === 'Stable') trendClass = 'trend-stable';
 
       row.innerHTML = `
-        <td class="raid-table-cell raid-table-cell-sticky">${player.name}</td>
+        <td class="raid-table-cell raid-table-cell-sticky">
+          <a href="/player/${player.allycode}" class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors">
+            ${player.name}
+          </a>
+        </td>
         <td class="raid-table-cell">${player.allycode}</td>
         <td class="raid-table-cell ${participationClass}">${player.participation.toFixed(1)}%</td>
         <td class="raid-table-cell">${player.raidsParticipated}/${player.totalRaids}</td>

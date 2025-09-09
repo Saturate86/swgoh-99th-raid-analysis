@@ -1,0 +1,168 @@
+---
+import type { PlayerRaidEntry } from '../types/raid.ts';
+
+interface Props {
+  playerHistory: PlayerRaidEntry[];
+  playerName: string;
+}
+
+const { playerHistory, playerName } = Astro.props;
+
+// Filter only raids where player was in guild and prepare chart data
+const chartData = playerHistory
+  .filter(r => r.estimatedScore > 0 || r.score > 0)
+  .map(raid => ({
+    date: raid.date,
+    score: raid.participated ? raid.score : 0,
+    participated: raid.participated
+  }));
+
+// Calculate 5-raid moving average
+const movingAverage = chartData.map((_, index) => {
+  const start = Math.max(0, index - 4);
+  const subset = chartData.slice(start, index + 1).filter(r => r.participated && r.score > 0);
+  return subset.length > 0 ? subset.reduce((sum, r) => sum + r.score, 0) / subset.length : null;
+});
+
+const chartId = `playerHistoryChart-${playerName.replace(/\s+/g, '')}`;
+---
+
+<div class="glass-card p-5">
+  <h3 class="text-heading mb-4 text-center">📊 Score History</h3>
+  <div class="relative" style="height: 400px;">
+    <canvas id={chartId}></canvas>
+  </div>
+</div>
+
+<script define:vars={{ chartData, movingAverage, chartId, playerName }}>
+  // Wait for Chart.js to be loaded
+  function initPlayerHistoryChart() {
+    if (typeof Chart === 'undefined') {
+      setTimeout(initPlayerHistoryChart, 100);
+      return;
+    }
+
+    const ctx = document.getElementById(chartId);
+    if (!ctx) return;
+
+    // Format dates for display
+    const labels = chartData.map(d => {
+      const date = new Date(d.date);
+      return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    });
+
+    const scores = chartData.map(d => d.score);
+    const participationColors = chartData.map(d => d.participated ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)');
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Score',
+            data: scores,
+            borderColor: 'rgba(34, 211, 238, 1)',
+            backgroundColor: participationColors,
+            pointBackgroundColor: participationColors,
+            pointBorderColor: 'rgba(34, 211, 238, 1)',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            borderWidth: 2,
+            tension: 0.1,
+            fill: false
+          },
+          {
+            label: '5-Raid Moving Average',
+            data: movingAverage,
+            borderColor: 'rgba(251, 191, 36, 0.8)',
+            backgroundColor: 'rgba(251, 191, 36, 0.1)',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            tension: 0.3,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: {
+              color: 'rgba(255, 255, 255, 0.8)',
+              font: {
+                size: 12
+              }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += new Intl.NumberFormat('de-DE').format(Math.round(context.parsed.y));
+                }
+                if (context.datasetIndex === 0 && !chartData[context.dataIndex].participated) {
+                  label += ' (Did not participate)';
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            display: true,
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.6)',
+              maxRotation: 45,
+              minRotation: 45,
+              autoSkip: true,
+              maxTicksLimit: 15
+            }
+          },
+          y: {
+            display: true,
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.6)',
+              callback: function(value) {
+                return new Intl.NumberFormat('de-DE', { 
+                  notation: 'compact',
+                  compactDisplay: 'short' 
+                }).format(value);
+              }
+            },
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+  // Initialize chart when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPlayerHistoryChart);
+  } else {
+    initPlayerHistoryChart();
+  }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

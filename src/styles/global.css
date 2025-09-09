@@ -66,8 +66,7 @@
 .border-secondary { border-color: var(--color-secondary); }
 .border-accent { border-color: var(--color-accent); }
 
-.shadow-primary { text-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.5); }
-.shadow-secondary { text-shadow: 0 0 10px rgba(var(--color-secondary-rgb), 0.5); }
+/* Shadow classes removed to eliminate bloom effect */
 
 /* Custom styles for Star Wars themed design */
 body {
@@ -107,7 +106,6 @@ body {
 /* Orange text for theme (titles/headings) */
 .text-heading {
   color: var(--color-secondary);
-  text-shadow: 0 0 10px rgba(var(--color-secondary-rgb), 0.5);
 }
 
 /* Participation status colors */
@@ -250,7 +248,6 @@ body {
   .raid-table-header {
     @apply bg-orange-400/20 font-bold sticky top-0 cursor-pointer select-none text-white;
     @apply text-xs sm:text-sm px-2 sm:px-4 py-3 sm:py-4 text-left;
-    text-shadow: 0 0 10px rgba(240, 145, 85, 0.5);
   }
   
   .raid-table-header:hover {
@@ -260,7 +257,6 @@ body {
   .raid-table-header-sticky {
     @apply sticky left-0 border-r-2 border-orange-400 z-30;
     background-color: rgb(251, 146, 60); /* orange-400 without transparency */
-    backdrop-filter: blur(8px);
   }
   
   /* Table Cell Styles */
@@ -275,8 +271,7 @@ body {
   
   .raid-table-cell-sticky {
     @apply sticky left-0 border-r-2 border-orange-400 z-10;
-    background-color: rgba(26, 26, 46, 0.95);
-    backdrop-filter: blur(8px);
+    background-color: rgb(26, 26, 46); /* Solid color, no transparency */
   }
   
   .raid-table-cell-center {
@@ -385,11 +380,64 @@ body {
   
   /* Table Row Hover */
   .raid-table-row {
-    @apply transition-colors duration-200;
+    /* Removed transition for instant hover effect */
   }
   
   .raid-table-row:hover {
-    @apply bg-orange-600/25 cursor-pointer;
+    @apply bg-cyan-400/10 cursor-pointer;
+  }
+  
+  /* Enhanced hover contrast for sticky columns */
+  .raid-table-row:hover .raid-table-cell-sticky {
+    background-color: rgba(34, 211, 238, 0.15) !important;
+    color: white !important;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.5) !important;
+  }
+  
+  /* Keep link colors visible on hover */
+  .raid-table-row:hover .raid-table-cell-sticky a {
+    color: rgb(34, 211, 238) !important;
+  }
+  
+  .raid-table-row:hover .raid-table-cell-sticky a:hover {
+    color: rgb(165, 243, 252) !important;
+  }
+  
+  /* Enhanced hover contrast for status cells */
+  .raid-table-row:hover .status-excellent {
+    background-color: rgb(34, 197, 94) !important;
+    box-shadow: inset 0 0 20px rgba(34, 197, 94, 0.5) !important;
+  }
+  
+  .raid-table-row:hover .status-good {
+    background-color: rgb(234, 179, 8) !important;
+    box-shadow: inset 0 0 20px rgba(234, 179, 8, 0.5) !important;
+  }
+  
+  .raid-table-row:hover .status-warning {
+    background-color: rgb(249, 115, 22) !important;
+    box-shadow: inset 0 0 20px rgba(249, 115, 22, 0.5) !important;
+  }
+  
+  .raid-table-row:hover .status-poor {
+    background-color: rgb(220, 38, 38) !important;
+    box-shadow: inset 0 0 20px rgba(220, 38, 38, 0.5) !important;
+  }
+  
+  /* Enhanced hover contrast for participation cells */
+  .raid-table-row:hover .participation-excellent {
+    background-color: rgba(34, 197, 94, 0.6) !important;
+    box-shadow: inset 0 0 10px rgba(34, 197, 94, 0.3) !important;
+  }
+  
+  .raid-table-row:hover .participation-good {
+    background-color: rgba(251, 146, 60, 0.6) !important;
+    box-shadow: inset 0 0 10px rgba(251, 146, 60, 0.3) !important;
+  }
+  
+  .raid-table-row:hover .participation-poor {
+    background-color: rgba(239, 68, 68, 0.6) !important;
+    box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.3) !important;
   }
   
   /* Footer Styles */
@@ -415,13 +463,11 @@ body {
     .raid-table-header-sticky {
       @apply sticky left-0 z-30;
       background-color: rgb(251, 146, 60); /* orange-400 without transparency */
-      backdrop-filter: blur(8px);
     }
     
     .raid-table-cell-sticky {
       @apply z-25;
-      background-color: rgba(26, 26, 46, 0.98) !important;
-      backdrop-filter: blur(10px);
+      background-color: rgb(26, 26, 46) !important; /* Solid color */
     }
     
     .raid-table-cell {
@@ -576,15 +622,13 @@ body {
   }
 
   .table-header.table-cell-sticky {
-    background-color: rgba(240, 145, 85, 0.4) !important;
-    backdrop-filter: blur(10px);
+    background-color: rgb(251, 146, 60) !important; /* Solid orange */
     z-index: 30;
   }
 
   .table-cell-sticky {
     z-index: 25;
-    background-color: rgba(26, 26, 46, 0.98) !important;
-    backdrop-filter: blur(10px);
+    background-color: rgb(26, 26, 46) !important; /* Solid color */
   }
   
   .table-cell-sticky,

@@ -226,18 +226,22 @@ const { raidData } = Astro.props;
     clearAllPlayers();
     
     // Get players sorted by average performance (ascending)
+    // Filter out players with 0 average score (never participated)
     const playersByPerformance = Array.from(allPlayerData.entries())
       .map(([allycode, data]) => ({
         allycode,
         avgScore: data.scores.reduce((sum, r) => sum + r.score, 0) / data.scores.length
       }))
+      .filter(p => p.avgScore > 0) // Exclude players who never participated
       .sort((a, b) => a.avgScore - b.avgScore);
     
-    // Select worst 5 performers
-    for (let i = 0; i < Math.min(5, playersByPerformance.length); i++) {
+    // Select worst 5 performers that are actually in the dropdown
+    let selectedCount = 0;
+    for (let i = 0; i < playersByPerformance.length && selectedCount < 5; i++) {
       const checkbox = document.getElementById(`player-${playersByPerformance[i].allycode}`);
       if (checkbox) {
         checkbox.checked = true;
+        selectedCount++;
       }
     }
     updateSelectedText();

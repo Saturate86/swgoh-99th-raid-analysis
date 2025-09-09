@@ -1,0 +1,176 @@
+---
+interface Props {
+  totalRaids: number;
+  raidsParticipated: number;
+  participationRate: number;
+  avgScore: number;
+  bestScore: number;
+  worstScore: number;
+  recentAvgScore: number;
+  recentBestScore: number;
+  recentParticipationRate: number;
+  overallEfficiency: number;
+  consistencyScore: number;
+  growthRate: number;
+  currentStreak: number;
+  maxStreak: number;
+  performanceVsGuild: number;
+  rankTrendDirection: string;
+  currentRank: number;
+}
+
+const {
+  totalRaids,
+  raidsParticipated,
+  participationRate,
+  avgScore,
+  bestScore,
+  worstScore,
+  recentAvgScore,
+  recentBestScore,
+  recentParticipationRate,
+  overallEfficiency,
+  consistencyScore,
+  growthRate,
+  currentStreak,
+  maxStreak,
+  performanceVsGuild,
+  rankTrendDirection,
+  currentRank
+} = Astro.props;
+
+function formatNumber(num: number): string {
+  if (num === 0) return '0';
+  return new Intl.NumberFormat('de-DE').format(Math.round(num));
+}
+
+function getGrowthClass(growth: number): string {
+  if (growth > 10) return 'text-green-400';
+  if (growth < -10) return 'text-red-400';
+  return 'text-yellow-400';
+}
+
+function getEfficiencyClass(efficiency: number): string {
+  if (efficiency >= 100) return 'text-green-400';
+  if (efficiency >= 80) return 'text-yellow-400';
+  return 'text-red-400';
+}
+
+function getConsistencyClass(consistency: number): string {
+  if (consistency >= 80) return 'text-green-400';
+  if (consistency >= 60) return 'text-yellow-400';
+  return 'text-red-400';
+}
+---
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+  <!-- All-Time Statistics -->
+  <div class="glass-card p-4">
+    <h3 class="text-cyan-400 font-semibold mb-3 text-center">📈 All-Time Statistics</h3>
+    <div class="space-y-2 text-sm">
+      <div class="flex justify-between">
+        <span class="text-gray-400">Total Raids in Guild:</span>
+        <span class="text-white font-bold">{totalRaids}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Raids Participated:</span>
+        <span class="text-white font-bold">{raidsParticipated}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Participation Rate:</span>
+        <span class={participationRate >= 80 ? 'text-green-400 font-bold' : participationRate >= 50 ? 'text-yellow-400 font-bold' : 'text-red-400 font-bold'}>
+          {participationRate.toFixed(1)}%
+        </span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Average Score:</span>
+        <span class="text-cyan-400 font-bold">{formatNumber(avgScore)}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Best Score:</span>
+        <span class="text-green-400 font-bold">{formatNumber(bestScore)}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Worst Score:</span>
+        <span class="text-orange-400 font-bold">{formatNumber(worstScore)}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Performance (Last 5 Raids) -->
+  <div class="glass-card p-4">
+    <h3 class="text-cyan-400 font-semibold mb-3 text-center">🕐 Recent Performance</h3>
+    <div class="space-y-2 text-sm">
+      <div class="flex justify-between">
+        <span class="text-gray-400">Avg Score (Last 5):</span>
+        <span class="text-cyan-400 font-bold">{formatNumber(recentAvgScore)}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Best Score (Last 5):</span>
+        <span class="text-green-400 font-bold">{formatNumber(recentBestScore)}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Participation (Last 5):</span>
+        <span class={recentParticipationRate >= 80 ? 'text-green-400 font-bold' : recentParticipationRate >= 50 ? 'text-yellow-400 font-bold' : 'text-red-400 font-bold'}>
+          {recentParticipationRate.toFixed(1)}%
+        </span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Score Change:</span>
+        <span class={recentAvgScore > avgScore ? 'text-green-400 font-bold' : recentAvgScore < avgScore ? 'text-red-400 font-bold' : 'text-yellow-400 font-bold'}>
+          {recentAvgScore > avgScore ? '↑' : recentAvgScore < avgScore ? '↓' : '→'} 
+          {Math.abs(((recentAvgScore - avgScore) / avgScore) * 100).toFixed(1)}%
+        </span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Current Streak:</span>
+        <span class="text-white font-bold">{currentStreak} raids</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Max Streak:</span>
+        <span class="text-purple-400 font-bold">{maxStreak} raids</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Advanced Metrics -->
+  <div class="glass-card p-4">
+    <h3 class="text-cyan-400 font-semibold mb-3 text-center">🎯 Advanced Metrics</h3>
+    <div class="space-y-2 text-sm">
+      <div class="flex justify-between">
+        <span class="text-gray-400">Overall Efficiency:</span>
+        <span class={getEfficiencyClass(overallEfficiency)}>
+          {overallEfficiency.toFixed(1)}%
+        </span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Consistency Score:</span>
+        <span class={getConsistencyClass(consistencyScore)}>
+          {consistencyScore.toFixed(1)}%
+        </span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Growth Rate:</span>
+        <span class={getGrowthClass(growthRate)}>
+          {growthRate > 0 ? '+' : ''}{growthRate.toFixed(1)}%
+        </span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Performance vs Guild:</span>
+        <span class={performanceVsGuild > 10 ? 'text-green-400 font-bold' : performanceVsGuild < -10 ? 'text-red-400 font-bold' : 'text-yellow-400 font-bold'}>
+          {performanceVsGuild > 0 ? '+' : ''}{performanceVsGuild.toFixed(1)}%
+        </span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Current Rank:</span>
+        <span class="text-white font-bold">#{currentRank > 0 ? currentRank : '-'}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Rank Trend:</span>
+        <span class={rankTrendDirection === 'Improving' ? 'text-green-400 font-bold' : rankTrendDirection === 'Declining' ? 'text-red-400 font-bold' : 'text-yellow-400 font-bold'}>
+          {rankTrendDirection === 'Improving' ? '↑ ' : rankTrendDirection === 'Declining' ? '↓ ' : '→ '}{rankTrendDirection}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
