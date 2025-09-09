@@ -732,3 +732,35 @@ body {
     padding: 1.5rem;
   }
 }
+
+/* Chart Container Height Classes */
+.chart-sm {
+  height: 200px;
+}
+
+.chart-md {
+  height: 300px;
+}
+
+.chart-lg {
+  height: 400px;
+}
+
+.chart-xl {
+  height: 500px;
+}
+
+/* Responsive chart heights */
+@media (max-width: 768px) {
+  .chart-lg {
+    height: 250px;
+  }
+  
+  .chart-xl {
+    height: 300px;
+  }
+  
+  .chart-md {
+    height: 200px;
+  }
+}

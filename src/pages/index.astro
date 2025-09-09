@@ -7,6 +7,7 @@ import RankingChart from '../components/RankingChart.astro';
 import PlayerTable from '../components/PlayerTable.astro';
 import RaidTable from '../components/RaidTable.astro';
 import { PROJECT_CONFIG } from '../config/project.ts';
+import guildConfig from '../config/guild.json';
 import type { RaidData, PlayerRaidEntry, PlayerStats } from '../types/raid.ts';
 import '../styles/global.css';
 
@@ -168,7 +169,7 @@ const lastRaidDate = totalRaids > 0 ? allRaidData[allRaidData.length - 1].date :
 const baseUrl = PROJECT_CONFIG.baseUrl;
 ---
 
-<Layout title={`${PROJECT_CONFIG.title} - SWGoH`}>
+<Layout title={`${guildConfig.title || PROJECT_CONFIG.title} - SWGoH`}>
   {totalRaids > 0 ? (
     <>
       <div class="text-center mb-4">

@@ -8,6 +8,7 @@ import path from 'path';
 
 const dataDir = path.resolve('data');
 const convertScript = 'npm run convert-csv';
+const processConfigScript = 'npm run process-config';
 
 console.log(`[watch-data] Watching for changes in ${dataDir} ...`);
 
@@ -24,19 +25,60 @@ function runConvertScript(reason) {
   });
 }
 
+function runProcessConfig(reason) {
+  console.log(`[watch-data] Triggering config processing (${reason})...`);
+  exec(processConfigScript, (err, stdout, stderr) => {
+    if (err) {
+      console.error('[watch-data] Error running config processing:', err);
+    } else {
+      console.log('[watch-data] Config processing complete.');
+      if (stdout) console.log(stdout);
+      if (stderr) console.error(stderr);
+    }
+  });
+}
+
 // Run conversion once at startup to ensure collections are always generated
 runConvertScript('startup');
 
-let timeout = null;
+let csvTimeout = null;
+let configTimeout = null;
+
+// Function to check if a file is a logo file
+function isLogoFile(filename) {
+  const logoExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.webp'];
+  const ext = path.extname(filename).toLowerCase();
+  const basename = path.basename(filename, ext).toLowerCase();
+  
+  // Match common logo patterns or specifically named files in guild config
+  return logoExtensions.includes(ext) && (
+    basename.includes('logo') || 
+    basename.includes('guild') || 
+    filename === 'guild-logo.png' ||
+    filename === 'logo.png'
+  );
+}
 
 watch(dataDir, { recursive: true }, (eventType, filename) => {
   console.log(`[watch-data] File event: ${eventType} - ${filename}`);
-  if (filename && (filename.endsWith('.csv') || filename.endsWith('.CSV'))) {
-    console.log(`[watch-data] Detected change: ${filename} (${eventType})`);
-    if (timeout) clearTimeout(timeout);
-    // Debounce rapid changes
-    timeout = setTimeout(() => {
-      runConvertScript('file change');
+  
+  if (!filename) return;
+  
+  // Handle CSV file changes
+  if (filename.endsWith('.csv') || filename.endsWith('.CSV')) {
+    console.log(`[watch-data] Detected CSV change: ${filename} (${eventType})`);
+    if (csvTimeout) clearTimeout(csvTimeout);
+    csvTimeout = setTimeout(() => {
+      runConvertScript('CSV file change');
+    }, 300);
+  }
+  
+  // Handle guild config or logo file changes
+  if (filename === 'guild-config.json' || isLogoFile(filename)) {
+    console.log(`[watch-data] Detected config/logo change: ${filename} (${eventType})`);
+    if (configTimeout) clearTimeout(configTimeout);
+    configTimeout = setTimeout(() => {
+      runProcessConfig('config/logo file change');
     }, 300);
   }
 });

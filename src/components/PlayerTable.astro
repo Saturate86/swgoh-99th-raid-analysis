@@ -1,11 +1,13 @@
 ---
 import type { PlayerStats } from '../types/raid.ts';
+import { PROJECT_CONFIG } from '../config/project.ts';
 
 interface Props {
   allPlayerStats: PlayerStats[];
 }
 
 const { allPlayerStats } = Astro.props;
+const baseUrl = PROJECT_CONFIG.baseUrl.endsWith('/') ? PROJECT_CONFIG.baseUrl.slice(0, -1) : PROJECT_CONFIG.baseUrl;
 
 // Helper functions
 function formatNumber(num: number): string {
@@ -88,7 +90,7 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
         {sortedPlayers.map((player) => (
           <tr class="raid-table-row">
             <td class="raid-table-cell raid-table-cell-sticky">
-              <a href={`/player/${player.allycode}`} class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors">
+              <a href={`${baseUrl}/player/${player.allycode}`} class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors">
                 {player.name}
               </a>
             </td>
@@ -115,7 +117,7 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
   </div>
 </div>
 
-<script define:vars={{ allPlayerStats }}>
+<script define:vars={{ allPlayerStats, baseUrl }}>
   let filteredData = [...allPlayerStats];
   
   // Load saved sort state from localStorage
@@ -276,7 +278,7 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
 
       row.innerHTML = `
         <td class="raid-table-cell raid-table-cell-sticky">
-          <a href="/player/${player.allycode}" class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors">
+          <a href="${baseUrl}/player/${player.allycode}" class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors">
             ${player.name}
           </a>
         </td>

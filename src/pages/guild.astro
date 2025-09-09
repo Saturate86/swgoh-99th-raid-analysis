@@ -1,0 +1,357 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../components/Layout.astro';
+import StatCard from '../components/StatCard.astro';
+import { PROJECT_CONFIG } from '../config/project.ts';
+import guildConfig from '../config/guild.json';
+import type { RaidData } from '../types/raid.ts';
+
+// Get all raid data
+const allRaids = await getCollection('raids');
+const sortedRaids = allRaids.sort((a, b) => new Date(a.data.date).getTime() - new Date(b.data.date).getTime());
+
+// Process all raid data
+const allRaidData = sortedRaids.map(raid => ({
+  date: raid.data.date,
+  file: raid.data.filename,
+  totalScore: raid.data.players.reduce((sum, p) => sum + (p.participated ? p.lastActualScore : 0), 0),
+  totalEstimated: raid.data.players.reduce((sum, p) => sum + p.estimatedScore, 0),
+  participants: raid.data.players.filter(p => p.participated).length,
+  totalPlayers: raid.data.players.length,
+  efficiency: 0 // will calculate below
+}));
+
+// Calculate efficiency for each raid
+allRaidData.forEach(raid => {
+  const participantEstimated = sortedRaids
+    .find(r => r.data.filename === raid.file)?.data.players
+    .filter(p => p.participated)
+    .reduce((sum, p) => sum + p.estimatedScore, 0) || 0;
+  
+  raid.efficiency = participantEstimated > 0 ? (raid.totalScore / participantEstimated) * 100 : 0;
+});
+
+// Calculate guild statistics
+const totalRaids = allRaidData.length;
+const avgScore = totalRaids > 0 ? allRaidData.reduce((sum, r) => sum + r.totalScore, 0) / totalRaids : 0;
+const avgParticipation = totalRaids > 0 ? 
+  (allRaidData.reduce((sum, r) => sum + (r.participants / r.totalPlayers * 100), 0) / totalRaids) : 0;
+const avgEfficiency = totalRaids > 0 ? allRaidData.reduce((sum, r) => sum + r.efficiency, 0) / totalRaids : 0;
+
+// Find best and worst raids
+const bestRaid = allRaidData.reduce((best, raid) => 
+  raid.totalScore > best.totalScore ? raid : best, allRaidData[0] || {totalScore: 0});
+const worstRaid = allRaidData.reduce((worst, raid) => 
+  raid.totalScore < worst.totalScore ? raid : worst, allRaidData[0] || {totalScore: Infinity});
+
+// Calculate days between raids
+const daysBetweenRaids: number[] = [];
+for (let i = 1; i < sortedRaids.length; i++) {
+  const prevDate = new Date(sortedRaids[i-1].data.date);
+  const currDate = new Date(sortedRaids[i].data.date);
+  const daysDiff = Math.round((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+  daysBetweenRaids.push(daysDiff);
+}
+const avgDaysBetween = daysBetweenRaids.length > 0 ? 
+  daysBetweenRaids.reduce((sum, d) => sum + d, 0) / daysBetweenRaids.length : 0;
+
+// Calculate moving averages (5-raid window)
+const movingAvg5 = allRaidData.map((raid, index) => {
+  const start = Math.max(0, index - 4);
+  const window = allRaidData.slice(start, index + 1);
+  const avg = window.reduce((sum, r) => sum + r.totalScore, 0) / window.length;
+  return { date: raid.date, value: avg };
+});
+
+// Calculate moving averages (10-raid window)
+const movingAvg10 = allRaidData.map((raid, index) => {
+  const start = Math.max(0, index - 9);
+  const window = allRaidData.slice(start, index + 1);
+  const avg = window.reduce((sum, r) => sum + r.totalScore, 0) / window.length;
+  return { date: raid.date, value: avg };
+});
+
+// Calculate standard deviation
+const scoresMean = avgScore;
+const squaredDiffs = allRaidData.map(r => Math.pow(r.totalScore - scoresMean, 2));
+const variance = totalRaids > 0 ? squaredDiffs.reduce((sum, d) => sum + d, 0) / totalRaids : 0;
+const standardDeviation = Math.sqrt(variance);
+
+// Calculate growth rate (comparing first 5 raids to last 5 raids)
+const firstRaids = allRaidData.slice(0, Math.min(5, allRaidData.length));
+const lastRaids = allRaidData.slice(-Math.min(5, allRaidData.length));
+const firstAvg = firstRaids.length > 0 ? firstRaids.reduce((sum, r) => sum + r.totalScore, 0) / firstRaids.length : 0;
+const lastAvg = lastRaids.length > 0 ? lastRaids.reduce((sum, r) => sum + r.totalScore, 0) / lastRaids.length : 0;
+const growthRate = firstAvg > 0 ? ((lastAvg - firstAvg) / firstAvg) * 100 : 0;
+
+// Helper functions
+function formatNumber(num: number): string {
+  return new Intl.NumberFormat('en-US').format(Math.round(num));
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+---
+
+<Layout title={`Guild Analysis - ${guildConfig.title || PROJECT_CONFIG.title}`}>
+  <div class="mb-6">
+    <h1 class="text-2xl sm:text-3xl font-bold text-center text-heading mb-2">Guild Performance Analysis</h1>
+    <p class="text-center text-gray-400">Complete raid history and trends across all {totalRaids} raids</p>
+  </div>
+
+  <!-- Overview Stats -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <StatCard title="Total Raids" value={totalRaids.toString()} />
+    <StatCard title="Avg Score" value={formatNumber(avgScore)} />
+    <StatCard title="Avg Participation" value={`${avgParticipation.toFixed(1)}%`} />
+    <StatCard title="Avg Efficiency" value={`${avgEfficiency.toFixed(1)}%`} />
+  </div>
+
+  <!-- Main Chart - All Raids History -->
+  <div class="glass-card p-5 mb-8">
+    <h2 class="text-xl font-bold text-heading mb-4">Complete Raid History</h2>
+    <div class="chart-container chart-lg">
+      <canvas id="guildHistoryChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Statistics Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Performance Stats -->
+    <div class="glass-card p-5">
+      <h3 class="text-lg font-bold text-heading mb-4">Performance Statistics</h3>
+      <div class="space-y-3">
+        <div class="flex justify-between">
+          <span class="text-gray-400">Best Raid Score:</span>
+          <span class="text-cyan-400 font-bold">{formatNumber(bestRaid.totalScore)} ({formatDate(bestRaid.date)})</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-400">Worst Raid Score:</span>
+          <span class="text-orange-400 font-bold">{formatNumber(worstRaid.totalScore)} ({formatDate(worstRaid.date)})</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-400">Standard Deviation:</span>
+          <span class="text-gray-300">{formatNumber(standardDeviation)}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-400">Growth Rate:</span>
+          <span class={growthRate > 0 ? 'text-green-400' : 'text-red-400'}>{growthRate > 0 ? '+' : ''}{growthRate.toFixed(1)}%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Raid Frequency Stats -->
+    <div class="glass-card p-5">
+      <h3 class="text-lg font-bold text-heading mb-4">Raid Frequency</h3>
+      <div class="space-y-3">
+        <div class="flex justify-between">
+          <span class="text-gray-400">Avg Days Between Raids:</span>
+          <span class="text-cyan-400 font-bold">{avgDaysBetween.toFixed(1)} days</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-400">Total Days Tracked:</span>
+          <span class="text-gray-300">
+            {(() => {
+              if (sortedRaids.length < 2) return '0';
+              const firstDate = new Date(sortedRaids[0].data.date);
+              const lastDate = new Date(sortedRaids[sortedRaids.length - 1].data.date);
+              return Math.round((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+            })()}
+          </span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-400">First Raid:</span>
+          <span class="text-gray-300">{sortedRaids[0] ? formatDate(sortedRaids[0].data.date) : 'N/A'}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-400">Latest Raid:</span>
+          <span class="text-gray-300">{sortedRaids[sortedRaids.length - 1] ? formatDate(sortedRaids[sortedRaids.length - 1].data.date) : 'N/A'}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Participation Trends -->
+  <div class="glass-card p-5 mb-8">
+    <h2 class="text-xl font-bold text-heading mb-4">Participation Trends</h2>
+    <div class="chart-container chart-md">
+      <canvas id="participationChart"></canvas>
+    </div>
+  </div>
+
+</Layout>
+
+<script define:vars={{ allRaidData, movingAvg5, movingAvg10 }}>
+  // Helper function to get CSS custom property values
+  function getCSSVariable(variable) {
+    return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+  }
+
+  // Get theme colors from CSS variables
+  const themeColors = {
+    primary: getCSSVariable('--color-primary'),
+    secondary: getCSSVariable('--color-secondary'),
+    accent: getCSSVariable('--color-accent'),
+    primaryRgb: getCSSVariable('--color-primary-rgb'),
+    secondaryRgb: getCSSVariable('--color-secondary-rgb'),
+    accentRgb: getCSSVariable('--color-accent-rgb'),
+    primaryAlpha: (alpha) => `rgba(${getCSSVariable('--color-primary-rgb')}, ${alpha})`,
+    secondaryAlpha: (alpha) => `rgba(${getCSSVariable('--color-secondary-rgb')}, ${alpha})`,
+    accentAlpha: (alpha) => `rgba(${getCSSVariable('--color-accent-rgb')}, ${alpha})`
+  };
+
+  // Wait for Chart.js to be available
+  function initCharts() {
+    if (typeof Chart === 'undefined') {
+      setTimeout(initCharts, 100);
+      return;
+    }
+
+    // Guild History Chart
+    const historyCtx = document.getElementById('guildHistoryChart');
+    if (historyCtx) {
+      new Chart(historyCtx, {
+        type: 'line',
+        data: {
+          labels: allRaidData.map(r => new Date(r.date).toLocaleDateString()),
+          datasets: [
+            {
+              label: 'Total Score',
+              data: allRaidData.map(r => r.totalScore),
+              borderColor: themeColors.accent,
+              backgroundColor: themeColors.accentAlpha(0.1),
+              tension: 0.2,
+              yAxisID: 'y'
+            },
+            {
+              label: '5-Raid Average',
+              data: movingAvg5.map(r => r.value),
+              borderColor: themeColors.secondary,
+              borderDash: [5, 5],
+              backgroundColor: 'transparent',
+              tension: 0.2,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Participants',
+              data: allRaidData.map(r => r.participants),
+              borderColor: themeColors.primary,
+              backgroundColor: themeColors.primaryAlpha(0.1),
+              tension: 0.2,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              labels: { color: '#e5e7eb' }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(17, 24, 39, 0.9)',
+              titleColor: '#e5e7eb',
+              bodyColor: '#e5e7eb'
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(75, 85, 99, 0.2)' },
+              ticks: { color: '#9ca3af' }
+            },
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              grid: { color: 'rgba(75, 85, 99, 0.2)' },
+              ticks: { color: '#9ca3af' }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              ticks: { color: '#9ca3af' }
+            }
+          }
+        }
+      });
+    }
+
+    // Participation Chart
+    const partCtx = document.getElementById('participationChart');
+    if (partCtx) {
+      new Chart(partCtx, {
+        type: 'line',
+        data: {
+          labels: allRaidData.map(r => new Date(r.date).toLocaleDateString()),
+          datasets: [
+            {
+              label: 'Participation Rate (%)',
+              data: allRaidData.map(r => (r.participants / r.totalPlayers * 100)),
+              borderColor: themeColors.accent,
+              backgroundColor: themeColors.accentAlpha(0.1),
+              tension: 0.2,
+              fill: true
+            },
+            {
+              label: 'Total Players',
+              data: allRaidData.map(r => r.totalPlayers),
+              borderColor: themeColors.secondary,
+              backgroundColor: themeColors.secondaryAlpha(0.1),
+              tension: 0.2,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#e5e7eb' }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(75, 85, 99, 0.2)' },
+              ticks: { color: '#9ca3af' }
+            },
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              grid: { color: 'rgba(75, 85, 99, 0.2)' },
+              ticks: { color: '#9ca3af' },
+              min: 0,
+              max: 100
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              ticks: { color: '#9ca3af' }
+            }
+          }
+        }
+      });
+    }
+
+  }
+
+  // Initialize charts when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCharts);
+  } else {
+    initCharts();
+  }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

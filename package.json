@@ -3,11 +3,12 @@
   "type": "module",
   "version": "1.0.0",
   "scripts": {
-    "dev": "concurrently \"npm:watch-data\" \"astro dev\"",
+    "dev": "npm run process-config && concurrently \"npm:watch-data\" \"astro dev\"",
     "watch-data": "node scripts/watch-data.js",
-    "build": "npm run convert-csv && astro build",
+    "build": "npm run process-config && npm run convert-csv && astro build",
     "preview": "astro preview",
     "convert-csv": "node scripts/convert-csv-to-collections.js",
+    "process-config": "node scripts/process-guild-config.js",
     "astro": "astro"
   },
   "dependencies": {

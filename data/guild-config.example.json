@@ -1,0 +1,10 @@
+{
+  "guildName": "Your Guild Name",
+  "title": "SWGoH Raid Analysis",
+  "description": "Guild Raid Analytics for Star Wars: Galaxy of Heroes",
+  "logo": "guild-logo.png",
+  "theme": {
+    "primaryColor": "#00d4ff",
+    "accentColor": "#ffd700"
+  }
+}

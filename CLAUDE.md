@@ -1,5 +1,10 @@
 # SWGoH Raid Analysis Tool - Project Context
 
+## WICHTIGE ARBEITSANWEISUNGEN
+- Diese CLAUDE.md Datei IMMER aktualisieren, wenn wichtige Änderungen am Projekt vorgenommen werden
+- Neue Erkenntnisse, Konfigurationen oder strukturelle Änderungen hier dokumentieren
+- Die Datei dient als persistenter Kontext zwischen Sessions
+
 ## Project Overview
 Web application for analyzing Star Wars: Galaxy of Heroes (SWGoH) guild raid data from Wookiebot exports.
 
@@ -83,10 +88,15 @@ npm run convert-csv  # Convert CSV files to JSON collections
 6. Site available at: `https://[username].github.io/[repository-name]/`
 
 ## Important Files
-- `/src/pages/index.astro`: Main logic for statistics calculation
+- `/src/pages/index.astro`: Main dashboard with statistics calculation (last 5 raids focus)
+- `/src/pages/guild.astro`: Guild-wide analysis across ALL raids with trends and charts
+- `/src/pages/player/[allycode].astro`: Individual player detail pages
 - `/src/components/PlayerTable.astro`: Player performance table with sorting/filtering
 - `/src/components/RaidTable.astro`: Individual raid details table
+- `/src/config/project.ts`: Project configuration including BASE_URL for GitHub Pages
+- `/src/config/guild.json`: Generated guild configuration (from data/guild-config.json)
 - `/scripts/convert-csv-to-collections.js`: CSV parsing and conversion logic
+- `/scripts/process-guild-config.js`: Guild configuration and logo processing
 - `/.github/workflows/`: GitHub Actions workflow for deployment
 
 ## Statistics Calculation
@@ -106,3 +116,42 @@ npm run convert-csv  # Convert CSV files to JSON collections
 - Production guilds replace these with their own Wookiebot exports
 - All statistics focus on last 5 raids for relevance
 - Site rebuilds automatically on CSV upload via GitHub Actions
+
+## Guild Customization System
+- **Configuration File**: `data/guild-config.json` (user-editable)
+  - `guildName`: Guild display name
+  - `title`: Application title
+  - `description`: Application description
+  - `logo`: Custom logo filename (must be in data/ directory)
+  - `theme`: Colors (primaryColor, accentColor)
+
+- **Build Process**: `npm run process-config` (runs automatically)
+  - Copies custom logo from `data/` to `public/custom-logo.*`
+  - Generates `src/config/guild.json` for components to use
+  - Falls back to defaults if no custom config found
+
+- **Logo Handling**:
+  - Default: `public/bataillon-logo.png`
+  - Custom: Place logo file in `data/` directory, specify filename in guild-config.json
+  - System copies to `public/custom-logo.*` and updates `logoFile` in generated config
+
+## BASE_URL Configuration
+- The project uses a dynamic BASE_URL configured in `/src/config/project.ts`
+- BASE_URL is automatically set based on environment:
+  - Development: `/` (localhost)
+  - Production: `/[repository-name]/` (GitHub Pages)
+- All internal links (e.g., player detail pages) must use the BASE_URL to work correctly on GitHub Pages
+- Example: Player links in `PlayerTable.astro` use `${baseUrl}/player/${allycode}`
+- The BASE_URL is read from `import.meta.env.BASE_URL` or defaults based on production/development mode
+
+## Page Structure
+- **Dashboard** (`/`): Last 5 raids focus, key metrics, player/raid tables
+- **Guild Analysis** (`/guild/`): Complete raid history analysis with charts
+  - All-time statistics and trends
+  - Raid frequency analysis (days between raids)
+  - Moving averages (5-raid, 10-raid windows)
+  - Performance distribution histograms
+  - Participation trends over time
+- **Player Details** (`/player/[allycode]`): Individual player performance
+- **Help** (`/help/`): Documentation and usage guide
+- **About** (`/about/`): Project information
