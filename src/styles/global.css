@@ -388,16 +388,25 @@ body {
   
   /* Table Row Hover */
   .raid-table-row {
-    /* Removed transition for instant hover effect */
+    @apply cursor-pointer;
+    /* Remove all transitions for instant feedback */
+    transition: none !important;
+    /* Visible tap highlight for iOS */
+    -webkit-tap-highlight-color: rgba(34, 211, 238, 0.3);
   }
   
-  .raid-table-row:hover {
-    @apply bg-cyan-400/10 cursor-pointer;
+  /* Hover, focus and active states - all the same */
+  .raid-table-row:hover,
+  .raid-table-row:focus,
+  .raid-table-row:active {
+    @apply bg-cyan-400/10 outline-none;
   }
   
-  /* Enhanced hover contrast for sticky columns */
-  .raid-table-row:hover .raid-table-cell-sticky {
-    background-color: rgba(34, 211, 238, 0.15) !important;
+  /* Enhanced hover/focus/active contrast for sticky columns - solid background */
+  .raid-table-row:hover .raid-table-cell-sticky,
+  .raid-table-row:focus .raid-table-cell-sticky,
+  .raid-table-row:active .raid-table-cell-sticky {
+    background-color: rgb(20, 45, 50) !important; /* Solid dark cyan/blue */
     color: white !important;
     text-shadow: 0 0 2px rgba(0, 0, 0, 0.5) !important;
   }

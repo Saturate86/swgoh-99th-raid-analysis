@@ -57,7 +57,7 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
     <table id="playersTable" class="w-full border-collapse text-xs sm:text-sm">
       <thead>
         <tr>
-          <th onclick="sortTable('name')" class="raid-table-header raid-table-header-sticky cursor-pointer hover:bg-orange-400/30 select-none">
+          <th onclick="sortTable('name')" class="raid-table-header raid-table-header-sticky cursor-pointer hover:bg-orange-400/30 active:bg-orange-400/40 select-none">
             Player Name <span id="sort-name" class="sort-indicator">▲</span>
           </th>
           <th onclick="sortTable('allycode')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
@@ -88,7 +88,7 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
       </thead>
       <tbody id="playersTableBody">
         {sortedPlayers.map((player) => (
-          <tr class="raid-table-row">
+          <tr class="raid-table-row" tabindex="0">
             <td class="raid-table-cell raid-table-cell-sticky">
               <a href={`${baseUrl}/player/${player.allycode}`} class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors">
                 {player.name}
@@ -276,6 +276,7 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
       else if (player.trend === 'Falling') trendClass = 'trend-negative';
       else if (player.trend === 'Stable') trendClass = 'trend-stable';
 
+      row.tabIndex = 0; // Make row focusable for mobile
       row.innerHTML = `
         <td class="raid-table-cell raid-table-cell-sticky">
           <a href="${baseUrl}/player/${player.allycode}" class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors">
