@@ -1,11 +1,13 @@
 ---
 import type { PlayerStats } from '../types/raid.ts';
+import { PROJECT_CONFIG } from '../config/project.ts';
 
 interface Props {
   allPlayerStats: PlayerStats[];
 }
 
 const { allPlayerStats } = Astro.props;
+const baseUrl = PROJECT_CONFIG.baseUrl.endsWith('/') ? PROJECT_CONFIG.baseUrl.slice(0, -1) : PROJECT_CONFIG.baseUrl;
 
 // Helper functions
 function formatNumber(num: number): string {
@@ -36,14 +38,26 @@ function getTrendClass(trend: string): string {
 const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.name));
 ---
 
-<div class="glass-card p-3 sm:p-5 mt-6 sm:mt-8">
+<div class="glass-card p-3 sm:p-5 mb-6">
   <h2 class="text-heading mb-3 sm:mb-5 text-center text-sm sm:text-xl">📋 Player Statistics Overview</h2>
+  
+  <!-- Filter Controls -->
+  <div class="mb-4 flex justify-center">
+    <label class="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" id="hideIncompletePlayersFilter" class="sr-only">
+      <div class="switch">
+        <div class="switch-slider"></div>
+      </div>
+      <span class="text-gray-300 text-sm">Hide players not in all last 5 raids</span>
+    </label>
+  </div>
+  
   <div class="mobile-scroll-hint">👈 Swipe to see more columns</div>
   <div class="overflow-x-auto mobile-table-wrapper">
     <table id="playersTable" class="w-full border-collapse text-xs sm:text-sm">
       <thead>
         <tr>
-          <th onclick="sortTable('name')" class="raid-table-header raid-table-header-sticky cursor-pointer hover:bg-orange-400/30 select-none">
+          <th onclick="sortTable('name')" class="raid-table-header raid-table-header-sticky cursor-pointer hover:bg-orange-400/30 active:bg-orange-400/40 select-none">
             Player Name <span id="sort-name" class="sort-indicator">▲</span>
           </th>
           <th onclick="sortTable('allycode')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
@@ -53,7 +67,7 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
             Participation % <span id="sort-participation" class="sort-indicator">▼</span>
           </th>
           <th onclick="sortTable('raidsParticipated')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
-            Raids (Last 5) <span id="sort-raidsParticipated" class="sort-indicator">▼</span>
+            Raids Participated <span id="sort-raidsParticipated" class="sort-indicator">▼</span>
           </th>
           <th onclick="sortTable('avgEstimate')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
             Avg Estimate <span id="sort-avgEstimate" class="sort-indicator">▼</span>
@@ -74,8 +88,12 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
       </thead>
       <tbody id="playersTableBody">
         {sortedPlayers.map((player) => (
-          <tr class="raid-table-row">
-            <td class="raid-table-cell raid-table-cell-sticky">{player.name}</td>
+          <tr class="raid-table-row" tabindex="0">
+            <td class="raid-table-cell raid-table-cell-sticky">
+              <a href={`${baseUrl}/player/${player.allycode}`} class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors">
+                {player.name}
+              </a>
+            </td>
             <td class="raid-table-cell">{player.allycode}</td>
             <td class={`raid-table-cell ${getParticipationClass(player.participation)}`}>
               {player.participation.toFixed(1)}%
@@ -99,7 +117,7 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
   </div>
 </div>
 
-<script define:vars={{ allPlayerStats }}>
+<script define:vars={{ allPlayerStats, baseUrl }}>
   let filteredData = [...allPlayerStats];
   
   // Load saved sort state from localStorage
@@ -108,9 +126,17 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
     ? JSON.parse(savedSort) 
     : { column: 'name', direction: 'asc' };
 
+  // Load saved filter state from localStorage
+  const savedFilter = localStorage.getItem('playerTableHideIncomplete');
+  let hideIncompleteFilter = savedFilter === 'true';
+
   function formatNumber(num) {
     if (num === 0) return '-';
     return new Intl.NumberFormat('de-DE').format(Math.round(num));
+  }
+
+  function saveFilterState() {
+    localStorage.setItem('playerTableHideIncomplete', hideIncompleteFilter.toString());
   }
 
   function saveSortState() {
@@ -141,8 +167,18 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
   }
 
   function applyFilters() {
-    // Use all player stats directly (no filtering)
+    // Start with all player stats
     filteredData = [...allPlayerStats];
+    
+    // Apply incomplete players filter if enabled
+    if (hideIncompleteFilter) {
+      filteredData = filteredData.filter(player => {
+        // Check if player was present in all last 5 raids (regardless of participation)
+        // totalRaids should equal 5 for players who were in the guild for all 5 raids
+        return player.totalRaids === 5;
+      });
+    }
+    
     applySortWithoutToggle(currentSort.column);
     updatePlayerTable();
     updateSortIndicators();
@@ -240,8 +276,13 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
       else if (player.trend === 'Falling') trendClass = 'trend-negative';
       else if (player.trend === 'Stable') trendClass = 'trend-stable';
 
+      row.tabIndex = 0; // Make row focusable for mobile
       row.innerHTML = `
-        <td class="raid-table-cell raid-table-cell-sticky">${player.name}</td>
+        <td class="raid-table-cell raid-table-cell-sticky">
+          <a href="${baseUrl}/player/${player.allycode}" class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors">
+            ${player.name}
+          </a>
+        </td>
         <td class="raid-table-cell">${player.allycode}</td>
         <td class="raid-table-cell ${participationClass}">${player.participation.toFixed(1)}%</td>
         <td class="raid-table-cell">${player.raidsParticipated}/${player.totalRaids}</td>
@@ -264,8 +305,24 @@ const sortedPlayers = [...allPlayerStats].sort((a, b) => a.name.localeCompare(b.
   // Initialize with default sort and indicators
   applyFilters();
   
-  // Initialize indicators on page load
+  // Initialize indicators and filter on page load
   document.addEventListener('DOMContentLoaded', function() {
+    // Set initial filter state
+    const filterCheckbox = document.querySelector('#hideIncompletePlayersFilter');
+    if (filterCheckbox && filterCheckbox.type === 'checkbox') {
+      filterCheckbox.checked = hideIncompleteFilter;
+      
+      // Add event listener for filter changes
+      filterCheckbox.addEventListener('change', function() {
+        const checkbox = document.querySelector('#hideIncompletePlayersFilter');
+        if (checkbox && checkbox.type === 'checkbox') {
+          hideIncompleteFilter = checkbox.checked;
+          saveFilterState();
+          applyFilters();
+        }
+      });
+    }
+    
     updateSortIndicators();
   });
 

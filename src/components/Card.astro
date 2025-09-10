@@ -8,7 +8,7 @@ export interface Props {
 const { title, icon = "📊", actions = false } = Astro.props;
 ---
 
-<div class="glass-card p-5">
+<div class="glass-card p-5 mb-6">
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-heading mb-3 sm:mb-5 text-center text-sm sm:text-xl">{icon} {title}</h2>
     {actions && (

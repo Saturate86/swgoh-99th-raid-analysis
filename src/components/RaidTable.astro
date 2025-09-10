@@ -111,8 +111,20 @@ const formatDate = (dateStr: string) => {
 const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => a.name.localeCompare(b.name));
 ---
 
-<div class="glass-card p-3 sm:p-5 mt-6 sm:mt-8">
+<div class="glass-card p-3 sm:p-5 mb-6">
   <h2 class="text-heading mb-3 sm:mb-5 text-center text-sm sm:text-xl">📊 Detailed Raid Results (Last 5 Raids)</h2>
+  
+  <!-- Filter Controls -->
+  <div class="mb-4 flex justify-center">
+    <label class="flex items-center gap-2 cursor-pointer">
+      <input type="checkbox" id="hideIncompleteRaidPlayersFilter" class="sr-only">
+      <div class="switch">
+        <div class="switch-slider"></div>
+      </div>
+      <span class="text-gray-300 text-sm">Hide players not in all last 5 raids</span>
+    </label>
+  </div>
+  
   <div class="mobile-scroll-hint">👈 Swipe to see all raid dates</div>
   <div class="overflow-x-auto">
     <table id="raidTable" class="w-full border-collapse text-xs sm:text-sm">
@@ -137,7 +149,7 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => a.name.lo
             Avg/Avg Est <span id="raid-sort-avgEst" class="sort-indicator">▼</span>
           </th>
           <th onclick="sortRaidTable('maxEst')" class="raid-table-header cursor-pointer hover:bg-orange-400/30 select-none">
-            Max/Est <span id="raid-sort-maxEst" class="sort-indicator">▼</span>
+            Max/Avg Est <span id="raid-sort-maxEst" class="sort-indicator">▼</span>
           </th>
         </tr>
       </thead>
@@ -154,7 +166,7 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => a.name.lo
           const avgEstPercentage = player.avgEstimate > 0 ? ((avgRaidScore / player.avgEstimate) * 100) : 0;
           
           return (
-            <tr class="raid-table-row" data-name={player.name} data-avgestimate={player.avgEstimate} data-avgest={avgEstPercentage} data-maxest={maxEstPercentage}>
+            <tr class="raid-table-row" tabindex="0" data-name={player.name} data-avgestimate={player.avgEstimate} data-avgest={avgEstPercentage} data-maxest={maxEstPercentage}>
               <td class="raid-table-cell raid-table-cell-sticky">{player.name}</td>
               <td class="raid-table-cell raid-table-cell-center">{new Intl.NumberFormat('de-DE').format(Math.round(player.avgEstimate))}</td>
               {last5RaidDates.map((raidDate: string) => {
@@ -209,7 +221,33 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => a.name.lo
     </table>
   </div>
   <div class="mt-3 sm:mt-4 text-center text-gray-400 text-xs sm:text-sm">
-    <p><strong>Legend:</strong> <span class="bg-green-500/80 text-white px-2 py-1 rounded">Green = Good (&gt;95%)</span> • <span class="bg-yellow-500/80 text-white px-2 py-1 rounded">Yellow = Average (80-95%)</span> • <span class="bg-orange-500/80 text-white px-2 py-1 rounded">Orange = Below Average (70-80%)</span> • <span class="bg-red-600/80 text-white px-2 py-1 rounded">Red = Poor (&lt;70%)</span> • <span class="text-gray-500">Gray = Did Not Participate</span> • Max/Est = Best Score / Max Estimated</p>
+    <!-- Mobile Legend (stacked) -->
+    <div class="block sm:hidden space-y-2">
+      <p><strong>Legend:</strong></p>
+      <div class="flex flex-wrap justify-center gap-1 text-xs">
+        <span class="bg-green-500/80 text-white px-2 py-1 rounded whitespace-nowrap">Green = Good (&gt;95%)</span>
+        <span class="bg-yellow-500/80 text-white px-2 py-1 rounded whitespace-nowrap">Yellow = Average (80-95%)</span>
+      </div>
+      <div class="flex flex-wrap justify-center gap-1 text-xs">
+        <span class="bg-orange-500/80 text-white px-2 py-1 rounded whitespace-nowrap">Orange = Below Avg (70-80%)</span>
+        <span class="bg-red-600/80 text-white px-2 py-1 rounded whitespace-nowrap">Red = Poor (&lt;70%)</span>
+      </div>
+      <div class="flex flex-wrap justify-center gap-1 text-xs">
+        <span class="text-gray-500">Gray = Did Not Participate</span>
+      </div>
+      <div class="text-xs">
+        <span>Avg/Avg Est = Average Score / Average Estimated</span>
+      </div>
+      <div class="text-xs">
+        <span>Max/Avg Est = Best Score / Average Estimated</span>
+      </div>
+    </div>
+    
+    <!-- Desktop Legend (inline) -->
+    <div class="hidden sm:block">
+      <p><strong>Legend:</strong> <span class="bg-green-500/80 text-white px-2 py-1 rounded">Green = Good (&gt;95%)</span> • <span class="bg-yellow-500/80 text-white px-2 py-1 rounded">Yellow = Average (80-95%)</span> • <span class="bg-orange-500/80 text-white px-2 py-1 rounded">Orange = Below Average (70-80%)</span> • <span class="bg-red-600/80 text-white px-2 py-1 rounded">Red = Poor (&lt;70%)</span> • <span class="text-gray-500">Gray = Did Not Participate</span></p>
+      <p class="mt-1">Avg/Avg Est = Average Score / Average Estimated • Max/Avg Est = Best Score / Average Estimated</p>
+    </div>
   </div>
 </div>
 
@@ -220,8 +258,57 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => a.name.lo
     ? JSON.parse(savedRaidSort) 
     : { column: 'name', direction: 'asc' };
 
+  // Load saved filter state from localStorage
+  const savedRaidFilter = localStorage.getItem('raidTableHideIncomplete');
+  let hideIncompleteRaidFilter = savedRaidFilter === 'true';
+
   function saveRaidSortState() {
     localStorage.setItem('raidTableSort', JSON.stringify(currentRaidSort));
+  }
+
+  function saveRaidFilterState() {
+    localStorage.setItem('raidTableHideIncomplete', hideIncompleteRaidFilter.toString());
+  }
+
+  function applyRaidFilter() {
+    const tbody = document.getElementById('raidTableBody');
+    if (!tbody) return;
+    
+    const rows = tbody.querySelectorAll('tr:not(.raid-table-footer)');
+    
+    rows.forEach(row => {
+      if (hideIncompleteRaidFilter) {
+        // Check if player has data for all raids (no undefined entries)
+        const cells = row.querySelectorAll('td[data-raid-date]');
+        let hasAllRaids = true;
+        
+        cells.forEach(cell => {
+          // If cell contains "-" and has gray color, it means player wasn't in guild
+          if (cell.textContent && cell.textContent.trim() === '-' && cell.classList.contains('text-gray-500')) {
+            hasAllRaids = false;
+          }
+        });
+        
+        if (hasAllRaids) {
+          row.classList.remove('hidden');
+        } else {
+          row.classList.add('hidden');
+        }
+      } else {
+        row.classList.remove('hidden');
+      }
+    });
+    
+    // Fix borders: Remove border from last visible row
+    const visibleRows = Array.from(rows).filter(row => !row.classList.contains('hidden'));
+    
+    // Remove 'last-visible' class from all rows first
+    rows.forEach(row => row.classList.remove('last-visible'));
+    
+    // Add 'last-visible' class to the actual last visible row
+    if (visibleRows.length > 0) {
+      visibleRows[visibleRows.length - 1].classList.add('last-visible');
+    }
   }
 
   function updateRaidSortIndicators() {
@@ -324,8 +411,27 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => a.name.lo
   applySortRaidTableWithoutToggle();
   updateRaidSortIndicators();
   
-  // Initialize indicators on page load
+  // Initialize filter and indicators on page load
   document.addEventListener('DOMContentLoaded', function() {
+    // Set initial filter state
+    const filterCheckbox = document.querySelector('#hideIncompleteRaidPlayersFilter') as HTMLInputElement;
+    if (filterCheckbox && filterCheckbox.type === 'checkbox') {
+      filterCheckbox.checked = hideIncompleteRaidFilter;
+      
+      // Add event listener for filter changes
+      filterCheckbox.addEventListener('change', function() {
+        const checkbox = document.querySelector('#hideIncompleteRaidPlayersFilter') as HTMLInputElement;
+        if (checkbox && checkbox.type === 'checkbox') {
+          hideIncompleteRaidFilter = checkbox.checked;
+          saveRaidFilterState();
+          applyRaidFilter();
+        }
+      });
+    }
+    
+    // Apply initial filter
+    applyRaidFilter();
+    
     applySortRaidTableWithoutToggle();
     updateRaidSortIndicators();
   });

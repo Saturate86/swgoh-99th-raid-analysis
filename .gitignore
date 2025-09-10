@@ -5,6 +5,10 @@ dist/
 
 # generated collection files (regenerated on each build)
 src/content/raids/*.json
+src/config/guild.json
+
+# CSV data files (guild-specific data)
+data/*.csv
 
 # dependencies
 node_modules/

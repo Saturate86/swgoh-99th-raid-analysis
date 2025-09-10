@@ -1,5 +1,6 @@
 ---
 import { PROJECT_CONFIG } from '../config/project.ts';
+import guildConfig from '../config/guild.json';
 
 export interface Props {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -8,7 +9,8 @@ export interface Props {
 }
 
 const { size = 'md', showText = false, className = '' } = Astro.props;
-const logoPath = PROJECT_CONFIG.baseUrl.endsWith('/') ? `${PROJECT_CONFIG.baseUrl}bataillon-logo.png` : `${PROJECT_CONFIG.baseUrl}/bataillon-logo.png`;
+const baseUrl = PROJECT_CONFIG.baseUrl.endsWith('/') ? PROJECT_CONFIG.baseUrl : PROJECT_CONFIG.baseUrl + '/';
+const logoPath = `${baseUrl}${guildConfig.logoFile || 'bataillon-logo.png'}`;
 
 const sizeClasses = {
   sm: 'w-8 h-8',
@@ -29,13 +31,13 @@ const textSizes = {
   <div class={sizeClasses[size]}>
     <img 
       src={logoPath} 
-      alt="Bataillon Logo" 
+      alt="Guild Logo" 
       class="w-full h-full object-contain rounded-full"
     />
   </div>
   {showText && (
     <span class={`font-bold text-heading ${textSizes[size]} tracking-wider`}>
-      BATAILLON
+      {guildConfig.guildName || 'SWGoH Guild'}
     </span>
   )}
 </div>
