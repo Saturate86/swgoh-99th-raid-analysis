@@ -6,141 +6,302 @@ title: "SWGoH Raid Analysis - Help"
 import Card from '../../components/Card.astro';
 import GitHubLink from '../../components/GitHubLink.astro';
 
-# 🛸 SWGoH Raid Analysis - Help Guide
+<div class="mb-6">
+  <h1 class="text-2xl sm:text-3xl font-bold text-center text-heading mb-2">Help & Documentation</h1>
+  <p class="text-center text-gray-400">Everything you need to know to get started with raid analysis</p>
+</div>
 
-<Card title="Getting Started" icon="🚀">
-  Welcome to the SWGoH Raid Analysis tool! This application automatically analyzes your guild's raid performance based on CSV files from Wookiebot.
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <Card title="Quick Start" icon="🚀">
+      <p class="text-gray-400 mb-6">Get your guild's raid analysis up and running in minutes.</p>
 
-  ## Quick Setup
+      <div class="space-y-6">
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">1. Fork the Repository</h3>
+          <p class="text-sm text-gray-300 mb-2">Create your own copy of the analysis tool</p>
+          <ul class="text-sm text-gray-400 space-y-1 ml-4">
+            <li>• Visit <a href="https://github.com/bataillon-swgoh/swgoh-raid-analysis" target="_blank" class="text-cyan-400 hover:text-cyan-300">GitHub Repository</a></li>
+            <li>• Click <strong>"Fork"</strong> button in the top right</li>
+            <li>• Name your repository (e.g., `my-guild-raids`)</li>
+            <li>• Keep it <strong>Public</strong> (required for GitHub Pages)</li>
+          </ul>
+        </div>
 
-  ### 1. Fork This Repository
-  1. Go to [https://github.com/bataillon-swgoh/swgoh-raid-analysis](https://github.com/bataillon-swgoh/swgoh-raid-analysis)
-  2. Click the **"Fork"** button in the top right to create your own copy of the repository
-  3. Give your repository a name (e.g., `my-guild-raids`, `guild-name-analysis`)
-  4. Make sure it's set to **Public** (required for GitHub Pages)
-  5. Click **"Create fork"**
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">2. Enable GitHub Pages</h3>
+          <p class="text-sm text-gray-300 mb-2">Activate automatic deployment</p>
+          <ul class="text-sm text-gray-400 space-y-1 ml-4">
+            <li>• Go to <strong>Settings → Pages</strong></li>
+            <li>• Set Source to <strong>"GitHub Actions"</strong></li>
+            <li>• Go to <strong>Actions</strong> tab</li>
+            <li>• Click <strong>"I understand my workflows, go ahead and enable them"</strong></li>
+          </ul>
+        </div>
 
-  #### Keeping Your Fork Up to Date
-  To get new features and bugfixes, you should regularly update your fork from the original repository:
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">3. Get Raid Data</h3>
+          <p class="text-sm text-gray-300 mb-2">Export data from your guild</p>
+          <div class="bg-gray-900/50 rounded p-3 mb-2">
+            <code class="text-cyan-400">/raid guild</code>
+          </div>
+          <p class="text-sm text-gray-400 ml-4">Use this Wookiebot command in Discord and download the CSV file</p>
+        </div>
 
-  1. Go to your forked repository on GitHub
-  2. Click the **"Sync fork"** button (usually above the file list or in the "Contribute" dropdown)
-  3. In the dialog, click the **"Update branch"** button to sync your fork with the latest changes from the original repository.
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">4. Upload CSV Files</h3>
+          <p class="text-sm text-gray-300 mb-2">Add your raid data to the repository</p>
+          <ul class="text-sm text-gray-400 space-y-1 ml-4">
+            <li>• Navigate to the <code class="text-cyan-300">/data</code> folder</li>
+            <li>• Click <strong>"Add file" → "Upload files"</strong></li>
+            <li>• Select CSV files from Wookiebot</li>
+            <li>• Commit with message like "Add raid data"</li>
+          </ul>
+        </div>
 
-  **Warning:** Never click **"Discard Commits"** when syncing your fork! This will permanently delete your own raid results and data. Always use the **"Update branch"** option to keep your changes.
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">5. Access Your Site</h3>
+          <p class="text-sm text-gray-300 mb-2">Your analysis will be live in minutes</p>
+          <div class="bg-gray-900/50 rounded p-3 mb-2">
+            <code class="text-cyan-400">https://[username].github.io/[repo-name]/</code>
+          </div>
+          <p class="text-sm text-gray-400 ml-4">The site builds automatically in 2-3 minutes after each upload</p>
+        </div>
+      </div>
 
-  ### 2. Enable GitHub Pages
-  1. Go to your new repository on GitHub
-  2. Navigate to **Settings** → **Pages** (in the left sidebar)
-  3. Under **Source**, select **"GitHub Actions"**
-  4. **Important:** After forking, GitHub Actions workflows are disabled by default. Go to the **Actions** tab and click **"I understand my workflows, go ahead and enable them"** to activate the workflows for your fork.
-  5. The workflow will be automatically detected
+      <div slot="footer">
+        <p class="text-sm text-blue-300">
+          💡 <strong>Pro Tip:</strong> Keep your fork updated with new features via the "Sync fork" button on GitHub
+        </p>
+      </div>
+    </Card>
 
-  ### 3. Add Your Guild Data
-  1. In Star Wars: Galaxy of Heroes, use the Wookiebot command:
-     ```
-     /raid guild
-     ```
-     Add your desired parameters (effort level, etc.)
-  2. Download the generated CSV file from Wookiebot
+    <Card title="Guild Customization" icon="🎨">
+      <p class="text-gray-400 mb-6">Personalize your guild's appearance and branding.</p>
 
-  ### 4. Upload Your Data
-  1. In your GitHub repository, navigate to the `/data` folder
-  2. Click **"Add file"** → **"Upload files"**
-  3. Upload your downloaded CSV file(s)
-  4. Commit the changes with a message like "Add raid data"
+      <div class="space-y-6">
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">1. Setup Configuration</h3>
+          <p class="text-sm text-gray-300 mb-2">Create your guild configuration file</p>
+          <ul class="text-sm text-gray-400 space-y-1 ml-4">
+            <li>• Copy <code class="text-cyan-300">guild-config.example.json</code> to <code class="text-cyan-300">guild-config.json</code></li>
+            <li>• Edit with your guild information</li>
+            <li>• <strong>Important:</strong> Remove any optional fields you don't use</li>
+          </ul>
+        </div>
 
-  ### 5. Automatic Deployment
-  - GitHub Actions will automatically build and deploy your site
-  - Your analysis will be available at: `https://YOUR_USERNAME.github.io/YOUR_REPOSITORY_NAME/`
-  - The build process takes 2-3 minutes
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">2. Configuration Examples</h3>
+          <p class="text-sm text-gray-300 mb-3">Choose minimal or full configuration</p>
+          
+          <p class="text-sm text-gray-400 mb-2">Minimal (only guild name):</p>
+          <div class="bg-gray-900/50 rounded p-3 mb-3">
+            <pre><code class="text-cyan-400">{`{
+  "guildName": "Your Guild"
+}`}</code></pre>
+          </div>
+          
+          <p class="text-sm text-gray-400 mb-2">Full configuration:</p>
+          <div class="bg-gray-900/50 rounded p-3">
+            <pre><code class="text-cyan-400">{`{
+  "guildName": "Order 66",
+  "title": "Order 66 - Raid Analysis",
+  "description": "Your guild motto",
+  "logo": "logo.png"
+}`}</code></pre>
+          </div>
+        </div>
 
-  ### 6. Adding More Data
-  - Repeat steps 3-4 whenever you want to add new raid data
-  - The site automatically updates with each new CSV file upload
-</Card>
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">3. Add Custom Logo (Optional)</h3>
+          <p class="text-sm text-gray-300 mb-2">Upload your guild's logo</p>
+          <ul class="text-sm text-gray-400 space-y-1 ml-4">
+            <li>• Upload image to <code class="text-cyan-300">/data</code> folder</li>
+            <li>• Recommended size: 150x150 pixels</li>
+            <li>• Supported formats: PNG, JPG, SVG</li>
+            <li>• Reference filename in config</li>
+          </ul>
+        </div>
+      </div>
 
-<Card title="Wookiebot Commands" icon="🤖">
-  ## Command Examples
-  ```
-  /raid guild
-  /raid guild effort:high
-  ```
-
-  ## Parameters
-  - **effort**: Analysis effort level - `low`, `medium` (default), `high`
-
-  ## Expected CSV Format
-  ```csv
-  name,allycode,estimatedScore,lastActualScore,diff,diffPercent
-  "Player Name",123456789,1500000,1450000,-50000,-3.33
-  ```
-
-  ### Column Descriptions
-  - **name**: Player name in the guild
-  - **allycode**: Unique player identifier
-  - **estimatedScore**: Expected raid score based on roster
-  - **lastActualScore**: Actual score achieved in the raid
-  - **diff**: Difference between estimated and actual score
-  - **diffPercent**: Percentage difference
-</Card>
-
-<Card title="Understanding the Data" icon="📊">
-  ## Key Metrics
-
-  - **Participation %**: Percentage of raids a player has participated in (last 5 raids)
-  - **Average Estimate**: Average estimated score per raid
-  - **Best Score**: Highest actual score achieved
-  - **Last Score**: Most recent raid score
-  - **Efficiency %**: Actual vs estimated performance ratio
-  - **Trend**: Rising, Falling, or Stable based on recent performance
-
-  ## Color Coding
-  - 🟢 **Green**: Good to Outstanding performance (95%+ of estimated score)
-    - Light Green: Good (95-105%)
-    - Green: Very Good (105-115%)  
-    - Dark Green: Outstanding (&gt;115%)
-  - 🟡 **Yellow**: Average performance (80-95% of estimated score)
-  - 🟠 **Orange**: Below average performance (70-80% of estimated score)
-  - 🔴 **Red**: Poor performance (&lt;70% of estimated score)
-  - ⚫ **Gray**: Did not participate in that raid
-</Card>
-
-<Card title="Features" icon="⭐">
-  ## Available Tools
-
-  ### 📈 Charts
-  - **Total Points Over Time**: Shows guild-wide performance trends
-  - **Performance Points Over Time**: Individual player scores over time
-
-  ### 🔍 Filtering
-  - Sort by various metrics (participation, score, name, etc.)
-  - Search by player name in tables
-
-  ### 📋 Tables
-  - **Player Statistics**: Overview of all players
-  - **Raid Details**: Detailed view of last 5 raids with individual scores
-</Card>
-
-<Card title="Troubleshooting" icon="🛠️">
-  ## Common Issues
-
-  ### Site Not Loading
-  - Check that GitHub Pages is enabled in your repository settings
-  - Verify that GitHub Actions completed successfully (check the "Actions" tab)
-  - Wait 2-3 minutes after upload for the build to complete
-
-  ### No Data Showing
-  - Ensure CSV files are uploaded to the `/data` folder (not the root)
-  - Check that CSV files follow the Wookiebot format
-  - Verify that the CSV files contain actual data (not empty)
-
-  ### Build Failures
-  - Check the "Actions" tab in your GitHub repository for error details
-  - Ensure CSV files are valid and not corrupted
-  - Try re-uploading the CSV files
-
-  <div slot="footer">
-    Need more help? Check the <GitHubLink>GitHub repository</GitHubLink> for detailed documentation.
+      <div slot="footer">
+        <p class="text-sm text-orange-300">
+          ⚠️ <strong>Remember:</strong> Delete any optional fields you don't use from the config file
+        </p>
+      </div>
+    </Card>
   </div>
-</Card>
+
+  <Card title="Wookiebot Commands" icon="🤖">
+    <p class="text-gray-400 mb-6">Export raid data from your guild using Wookiebot.</p>
+
+    <div class="space-y-6">
+      <div>
+        <h3 class="text-cyan-400 font-bold mb-2">Available Commands</h3>
+        <p class="text-sm text-gray-300 mb-2">Use these commands in Discord</p>
+        <div class="bg-gray-900/50 rounded p-3">
+          <pre><code class="text-cyan-400">{`/raid guild              # Default analysis
+/raid guild effort:high  # High effort analysis`}</code></pre>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-cyan-400 font-bold mb-2">Parameters</h3>
+        <p class="text-sm text-gray-300 mb-2">Customize your analysis</p>
+        <ul class="text-sm text-gray-400 space-y-1 ml-4">
+          <li>• <strong>effort:</strong> <code class="text-cyan-300">low</code> | <code class="text-cyan-300">medium</code> (default) | <code class="text-cyan-300">high</code></li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-cyan-400 font-bold mb-2">CSV Format</h3>
+        <p class="text-sm text-gray-300 mb-2">Expected file structure</p>
+        <div class="bg-gray-900/50 rounded p-3 mb-3">
+          <pre><code class="text-cyan-400">{`name,allycode,estimatedScore,lastActualScore,diff,diffPercent
+"Player Name",123456789,1500000,1450000,-50000,-3.33`}</code></pre>
+        </div>
+        
+        <p class="text-sm text-gray-400 mb-2">Column descriptions:</p>
+        <ul class="text-sm text-gray-400 space-y-1 ml-4">
+          <li>• <strong>name:</strong> Player name</li>
+          <li>• <strong>allycode:</strong> Player ID</li>
+          <li>• <strong>estimatedScore:</strong> Expected score based on roster</li>
+          <li>• <strong>lastActualScore:</strong> Actual score achieved</li>
+          <li>• <strong>diff:</strong> Score difference</li>
+          <li>• <strong>diffPercent:</strong> Percentage difference</li>
+        </ul>
+      </div>
+    </div>
+  </Card>
+
+  <Card title="Understanding the Data" icon="📊">
+    <p class="text-gray-400 mb-6">Learn how to interpret the performance metrics and visual indicators.</p>
+
+    <div class="space-y-6">
+      <div>
+        <h3 class="text-cyan-400 font-bold mb-2">Key Metrics</h3>
+        <p class="text-sm text-gray-300 mb-2">Important performance indicators</p>
+        <ul class="text-sm text-gray-400 space-y-1 ml-4">
+          <li>• <strong>Participation:</strong> % of last 5 raids participated</li>
+          <li>• <strong>Avg Estimate:</strong> Expected score average</li>
+          <li>• <strong>Best Score:</strong> Highest score achieved</li>
+          <li>• <strong>Efficiency:</strong> Actual vs estimated ratio</li>
+          <li>• <strong>Trend:</strong> Performance direction (↑ Rising, → Stable, ↓ Falling)</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-cyan-400 font-bold mb-2">Performance Color Coding</h3>
+        <p class="text-sm text-gray-300 mb-2">Visual indicators for efficiency levels</p>
+        <ul class="text-sm text-gray-400 space-y-1 ml-4">
+          <li>• <span class="text-green-400">🟢 Green (Dark):</span> Outstanding (&gt;115%)</li>
+          <li>• <span class="text-green-500">🟢 Green:</span> Very Good (105-115%)</li>
+          <li>• <span class="text-green-600">🟢 Green (Light):</span> Good (95-105%)</li>
+          <li>• <span class="text-yellow-400">🟡 Yellow:</span> Average (80-95%)</li>
+          <li>• <span class="text-orange-400">🟠 Orange:</span> Below Average (70-80%)</li>
+          <li>• <span class="text-red-400">🔴 Red:</span> Poor (&lt;70%)</li>
+          <li>• <span class="text-gray-500">⚫ Gray:</span> Did not participate</li>
+        </ul>
+      </div>
+    </div>
+  </Card>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <Card title="Features" icon="⭐">
+      <p class="text-gray-400 mb-6">Powerful tools to analyze your guild's performance.</p>
+
+      <div class="space-y-6">
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">📈 Visualizations</h3>
+          <p class="text-sm text-gray-300 mb-2">Interactive charts and graphs</p>
+          <ul class="text-sm text-gray-400 space-y-1 ml-4">
+            <li>• Guild performance trends over time</li>
+            <li>• Individual player score evolution</li>
+            <li>• Participation heatmaps</li>
+            <li>• Efficiency rankings</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">🔍 Analysis Tools</h3>
+          <p class="text-sm text-gray-300 mb-2">Data exploration features</p>
+          <ul class="text-sm text-gray-400 space-y-1 ml-4">
+            <li>• Sort by any metric</li>
+            <li>• Search players by name</li>
+            <li>• Filter active members</li>
+            <li>• Export data to CSV</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">📱 Responsive Design</h3>
+          <p class="text-sm text-gray-300 mb-2">Works on all devices</p>
+          <ul class="text-sm text-gray-400 space-y-1 ml-4">
+            <li>• Mobile-friendly interface</li>
+            <li>• Touch-optimized controls</li>
+            <li>• Fast loading times</li>
+            <li>• Automatic dark theme</li>
+          </ul>
+        </div>
+      </div>
+    </Card>
+
+    <Card title="Troubleshooting" icon="🛠️">
+      <p class="text-gray-400 mb-6">Common issues and their solutions.</p>
+
+      <div class="space-y-6">
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">Site Not Loading</h3>
+          <p class="text-sm text-gray-300 mb-2">Check these items in order</p>
+          <ul class="text-sm text-gray-400 space-y-1 ml-4">
+            <li>✅ GitHub Pages enabled in Settings?</li>
+            <li>✅ GitHub Actions completed successfully?</li>
+            <li>✅ Waited 2-3 minutes for build?</li>
+            <li>✅ Repository is public?</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">No Data Showing</h3>
+          <p class="text-sm text-gray-300 mb-2">Verify your data files</p>
+          <ul class="text-sm text-gray-400 space-y-1 ml-4">
+            <li>✅ CSV files in <code class="text-cyan-300">/data</code> folder?</li>
+            <li>✅ Valid Wookiebot CSV format?</li>
+            <li>✅ Files contain actual data?</li>
+            <li>✅ Files committed to repository?</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-cyan-400 font-bold mb-2">Build Failures</h3>
+          <p class="text-sm text-gray-300 mb-2">Debug deployment issues</p>
+          <ul class="text-sm text-gray-400 space-y-1 ml-4">
+            <li>✅ Check Actions tab for errors</li>
+            <li>✅ Verify CSV files are valid</li>
+            <li>✅ No special characters in filenames</li>
+            <li>✅ Try re-uploading files</li>
+          </ul>
+        </div>
+      </div>
+
+      <div slot="footer">
+        <p class="text-sm text-blue-300">
+          💬 Still need help? Check the <GitHubLink>GitHub repository</GitHubLink> for more information
+        </p>
+      </div>
+    </Card>
+  </div>
+
+  <div class="text-center mt-12 mb-8">
+    <h2 class="text-xl font-bold text-heading mb-4">Need More Help?</h2>
+    <p class="text-gray-400 mb-6">
+      Join our community or check out the source code for more detailed information.
+    </p>
+    <div class="flex justify-center gap-4">
+      <a href="https://github.com/bataillon-swgoh/swgoh-raid-analysis" target="_blank" class="btn-primary inline-flex items-center gap-2">
+        📂 GitHub Repository
+      </a>
+      <a href="https://github.com/bataillon-swgoh/swgoh-raid-analysis/issues" target="_blank" class="btn-secondary inline-flex items-center gap-2">
+        🐛 Report Issue
+      </a>
+    </div>
+  </div>

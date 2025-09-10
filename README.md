@@ -69,6 +69,50 @@ To get new features and bugfixes, you should regularly update your fork from the
 - Repeat steps 3-4 whenever you want to add new raid data
 - The site automatically updates with each new CSV file upload
 
+### 7. Guild Customization (Optional)
+
+You can personalize your guild's site with custom branding:
+
+#### Create Guild Configuration
+1. Copy `data/guild-config.example.json` to `data/guild-config.json`
+2. Edit the configuration with your guild information
+3. **Important**: Remove any optional fields you don't want to use
+
+##### Minimal Example (only guild name):
+```json
+{
+  "guildName": "Your Guild Name"
+}
+```
+
+##### Full Example (all options):
+```json
+{
+  "guildName": "Your Guild Name",
+  "title": "Your Guild - Raid Analysis",
+  "description": "Your guild motto or description",
+  "logo": "your-logo.png"
+}
+```
+
+**Note**: All fields except `guildName` are optional. Delete any lines you don't need from your configuration.
+
+#### Add Custom Logo
+1. Upload your logo image (PNG, JPG, or SVG) to the `/data` folder
+2. Reference the filename in your `guild-config.json`
+3. Recommended size: 150x150 pixels (square aspect ratio)
+
+#### Example Structure
+```
+/data/
+├── guild-config.json
+├── your-guild-logo.png
+├── raid_data_1.csv
+└── raid_data_2.csv
+```
+
+Your customizations will be applied automatically during the next build.
+
 ## Local Development
 
 ```bash

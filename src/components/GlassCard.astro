@@ -1,0 +1,21 @@
+---
+export interface Props {
+  class?: string;
+  noPadding?: boolean;
+  noMargin?: boolean;
+}
+
+const { class: className = '', noPadding = false, noMargin = false } = Astro.props;
+
+// Build the class string
+const classes = [
+  'glass-card',
+  !noPadding && 'p-3 sm:p-5',
+  !noMargin && 'mb-6',
+  className
+].filter(Boolean).join(' ');
+---
+
+<div class={classes}>
+  <slot />
+</div>

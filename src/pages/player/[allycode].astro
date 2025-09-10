@@ -220,12 +220,8 @@ function formatDate(dateStr: string): string {
 
 <Layout title={`${playerName} - Player Details`}>
   <div class="mb-6">
-    <a href={baseUrl || '/'} class="text-cyan-400 hover:text-cyan-300 mb-4 inline-block">← Back to Overview</a>
-    
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-cyan-400 mb-2">{playerName}</h1>
-      <p class="text-gray-400">Ally Code: {allycode}</p>
-    </div>
+    <h1 class="text-2xl sm:text-3xl font-bold text-center text-heading mb-2">{playerName}</h1>
+    <p class="text-center text-gray-400 mb-6">Ally Code: {allycode}</p>
     
     <PlayerStatsCards 
       totalRaids={raidsInGuild}
@@ -247,13 +243,13 @@ function formatDate(dateStr: string): string {
       currentRank={currentRank}
     />
     
-    <div class="grid grid-cols-1 gap-6 mb-8">
+    <div class="grid grid-cols-1 gap-6">
       <PlayerHistoryChart playerHistory={playerHistory} playerName={playerName} />
       <PlayerEfficiencyChart playerHistory={playerHistory} playerName={playerName} />
       <PlayerHeatmap playerHistory={playerHistory} playerName={playerName} />
     </div>
     
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 mt-6">
       <div class="glass-card p-5">
         <h3 class="text-heading mb-3 sm:mb-4 text-center text-sm sm:text-lg">🏆 Best 5 Performances</h3>
         <div class="space-y-2">
@@ -287,7 +283,7 @@ function formatDate(dateStr: string): string {
       </div>
     </div>
     
-    <div class="glass-card p-5">
+    <div class="glass-card p-5 mb-6">
       <h3 class="text-heading mb-3 sm:mb-4 text-center text-sm sm:text-lg">📊 Complete Raid History</h3>
       <div class="overflow-x-auto">
         <table class="w-full border-collapse text-sm">

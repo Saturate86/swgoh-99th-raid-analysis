@@ -101,7 +101,7 @@ function formatDate(dateStr: string): string {
   </div>
 
   <!-- Overview Stats -->
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6">
     <StatCard title="Total Raids" value={totalRaids.toString()} />
     <StatCard title="Avg Score" value={formatNumber(avgScore)} />
     <StatCard title="Avg Participation" value={`${avgParticipation.toFixed(1)}%`} />
@@ -109,7 +109,7 @@ function formatDate(dateStr: string): string {
   </div>
 
   <!-- Main Chart - All Raids History -->
-  <div class="glass-card p-5 mb-8">
+  <div class="glass-card p-5 mb-6">
     <h2 class="text-heading mb-3 sm:mb-5 text-center text-sm sm:text-xl">📊 Complete Raid History</h2>
     <div class="chart-container chart-lg">
       <canvas id="guildHistoryChart"></canvas>
@@ -117,7 +117,7 @@ function formatDate(dateStr: string): string {
   </div>
 
   <!-- Statistics Grid -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
     <!-- Performance Stats -->
     <div class="glass-card p-5">
       <h3 class="text-lg font-bold text-heading mb-4">Performance Statistics</h3>
@@ -173,7 +173,7 @@ function formatDate(dateStr: string): string {
   </div>
 
   <!-- Participation Trends -->
-  <div class="glass-card p-5 mb-8">
+  <div class="glass-card p-5 mb-6">
     <h2 class="text-heading mb-3 sm:mb-5 text-center text-sm sm:text-xl">📊 Participation Trends</h2>
     <div class="chart-container chart-md">
       <canvas id="participationChart"></canvas>
