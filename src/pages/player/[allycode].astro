@@ -12,15 +12,19 @@ import '../../styles/global.css';
 export async function getStaticPaths() {
   const allRaids = await getCollection('raids');
   
-  // Collect all unique allycodes
+  // Sort raids by date and get last 5 raids
+  const sortedRaids = allRaids.sort((a, b) => new Date(a.data.date).getTime() - new Date(b.data.date).getTime());
+  const last5Raids = sortedRaids.slice(-5);
+  
+  // Collect unique allycodes from last 5 raids only
   const allycodes = new Set<string>();
-  allRaids.forEach(raid => {
+  last5Raids.forEach(raid => {
     raid.data.players.forEach(player => {
       allycodes.add(player.allycode);
     });
   });
   
-  // Create paths for each player
+  // Create paths for each player from last 5 raids
   return Array.from(allycodes).map(allycode => ({
     params: { allycode },
   }));
