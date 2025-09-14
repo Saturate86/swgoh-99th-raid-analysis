@@ -1,4 +1,6 @@
 ---
+import { PROJECT_CONFIG } from '../config/project.ts';
+
 // This component renders the detailed raid results table
 export interface Props {
   allPlayerStats: any[];
@@ -6,6 +8,9 @@ export interface Props {
 }
 
 const { allPlayerStats, raidData } = Astro.props;
+
+// Calculate base URL for navigation
+const baseUrl = PROJECT_CONFIG.baseUrl.endsWith('/') ? PROJECT_CONFIG.baseUrl.slice(0, -1) : PROJECT_CONFIG.baseUrl;
 
 // Helper function to get percentage class (matches the JavaScript version)
 function getPercentageClass(percentage: number): string {
@@ -86,11 +91,13 @@ for (let raidDate of last5RaidDates) {
 // Calculate average Avg/Est percentage
 const avgAvgEstPercentage = allPlayersData.length > 0 ? 
   (allPlayersData.reduce((sum: number, p: any) => {
-    const participatedScores = last5RaidDates
+    // Include all raids where player was in guild (not undefined), count non-participation as 0
+    const guildRaidScores = last5RaidDates
       .map(raidDate => p.raids[raidDate])
-      .filter(score => score !== null && score !== undefined);
-    const avgRaidScore = participatedScores.length > 0 ? 
-      participatedScores.reduce((sum, score) => sum + score, 0) / participatedScores.length : 0;
+      .filter(score => score !== undefined)
+      .map(score => score === null ? 0 : score); // null means didn't participate but was in guild
+    const avgRaidScore = guildRaidScores.length > 0 ? 
+      guildRaidScores.reduce((sum, score) => sum + score, 0) / guildRaidScores.length : 0;
     const percentage = p.avgEstimate > 0 ? ((avgRaidScore / p.avgEstimate) * 100) : 0;
     return sum + percentage;
   }, 0) / allPlayersData.length) : 0;
@@ -158,16 +165,30 @@ const sortedPlayersData = [...allPlayersData].sort((a: any, b: any) => a.name.lo
           const maxEstPercentage = player.avgEstimate > 0 ? ((player.bestScore / player.avgEstimate) * 100) : 0;
           
           // Calculate Avg/Avg Est percentage
-          const participatedScores = last5RaidDates
+          // Include all raids where player was in guild (not undefined), count non-participation as 0
+          const guildRaidScores = last5RaidDates
             .map(raidDate => player.raids[raidDate])
-            .filter(score => score !== null && score !== undefined);
-          const avgRaidScore = participatedScores.length > 0 ? 
-            participatedScores.reduce((sum, score) => sum + score, 0) / participatedScores.length : 0;
+            .filter(score => score !== undefined)
+            .map(score => score === null ? 0 : score); // null means didn't participate but was in guild
+          const avgRaidScore = guildRaidScores.length > 0 ? 
+            guildRaidScores.reduce((sum, score) => sum + score, 0) / guildRaidScores.length : 0;
           const avgEstPercentage = player.avgEstimate > 0 ? ((avgRaidScore / player.avgEstimate) * 100) : 0;
+          
+          // Get player allycode from playerStats
+          const playerStat = allPlayerStats.find((p: any) => p.name === player.name);
+          const allycode = playerStat?.allycode || '';
           
           return (
             <tr class="raid-table-row" tabindex="0" data-name={player.name} data-avgestimate={player.avgEstimate} data-avgest={avgEstPercentage} data-maxest={maxEstPercentage}>
-              <td class="raid-table-cell raid-table-cell-sticky">{player.name}</td>
+              <td class="raid-table-cell raid-table-cell-sticky">
+                {allycode ? (
+                  <a href={`${baseUrl}/player/${allycode}`} class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors">
+                    {player.name}
+                  </a>
+                ) : (
+                  player.name
+                )}
+              </td>
               <td class="raid-table-cell raid-table-cell-center">{new Intl.NumberFormat('de-DE').format(Math.round(player.avgEstimate))}</td>
               {last5RaidDates.map((raidDate: string) => {
                 const score = player.raids[raidDate];

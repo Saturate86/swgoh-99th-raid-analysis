@@ -95,9 +95,8 @@ const chartId = `playerEfficiencyChart-${playerName.replace(/\s+/g, '')}`;
             backgroundColor: `rgba(${color2}, 0.1)`,
             pointBackgroundColor: chartData.map(d => {
               if (!d.participated) return 'rgba(156, 163, 175, 0.5)';
-              if (d.efficiency >= 100) return `rgba(${color3}, 0.8)`;
-              if (d.efficiency >= 80) return `rgba(${color2}, 0.8)`;
-              return `rgba(${color4}, 0.8)`;
+              // Always use orange (color2) for efficiency line dots
+              return `rgba(${color2}, 0.8)`;
             }),
             pointBorderColor: `rgba(${color2}, 1)`,
             pointRadius: 4,

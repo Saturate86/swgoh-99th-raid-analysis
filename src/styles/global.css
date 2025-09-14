@@ -395,20 +395,19 @@ body {
     -webkit-tap-highlight-color: rgba(34, 211, 238, 0.3);
   }
   
-  /* Hover, focus and active states - all the same */
+  /* Hover, focus and active states - use solid light blue color for consistency */
   .raid-table-row:hover,
   .raid-table-row:focus,
   .raid-table-row:active {
-    @apply bg-cyan-400/10 outline-none;
+    @apply outline-none;
+    background-color: rgb(35, 80, 95) !important; /* Solid light cyan-blue background */
   }
   
-  /* Enhanced hover/focus/active contrast for sticky columns - solid background */
+  /* Override sticky column background on hover to match */
   .raid-table-row:hover .raid-table-cell-sticky,
   .raid-table-row:focus .raid-table-cell-sticky,
   .raid-table-row:active .raid-table-cell-sticky {
-    background-color: rgb(20, 45, 50) !important; /* Solid dark cyan/blue */
-    color: white !important;
-    text-shadow: 0 0 2px rgba(0, 0, 0, 0.5) !important;
+    background-color: rgb(35, 80, 95) !important; /* Same solid color as row hover */
   }
   
   /* Keep link colors visible on hover */
