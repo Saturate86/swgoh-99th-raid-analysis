@@ -49,20 +49,31 @@ function parseCSV(csvText, raidDate) {
 }
 
 function extractDateFromFilename(filename) {
-  // New format: {raid}_{guildId}_{timestamp}.csv
+  // New format with RET (Raid Ending Time): {raid}_{guildId}_RET{timestamp}_{creationTimestamp}.csv
+  // Priority: Use RET timestamp when available
+  const retMatch = filename.match(/_RET(\d{10,13})_/);
+  if (retMatch) {
+    const timestamp = retMatch[1];
+    // Handle both 10-digit (seconds) and 13-digit (milliseconds) timestamps
+    const timestampMs = timestamp.length === 10 ? parseInt(timestamp) * 1000 : parseInt(timestamp);
+    const date = new Date(timestampMs);
+    return date.toISOString().split('T')[0];
+  }
+
+  // Old format: {raid}_{guildId}_{timestamp}.csv
   const timestampMatch = filename.match(/_(\d{13})\.csv$/);
   if (timestampMatch) {
     const timestamp = timestampMatch[1];
     const date = new Date(parseInt(timestamp));
     return date.toISOString().split('T')[0];
   }
-  
+
   // Fallback: try to match old format YYYY-MM-DD
   const oldFormatMatch = filename.match(/(\d{4}-\d{2}-\d{2})/);
   if (oldFormatMatch) {
     return oldFormatMatch[1];
   }
-  
+
   return 'Unknown';
 }
 
